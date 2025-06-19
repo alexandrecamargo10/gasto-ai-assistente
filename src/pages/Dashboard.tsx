@@ -12,8 +12,7 @@ import CategoryManagement from '@/components/dashboard/CategoryManagement';
 import SettingsPanel from '@/components/dashboard/SettingsPanel';
 import ReportsPanel from '@/components/dashboard/ReportsPanel';
 import CategoryLimits from '@/components/dashboard/CategoryLimits';
-import StripePayment from '@/components/dashboard/StripePayment';
-import { LogOut, User, Settings, BarChart3, PlusCircle, Tags, DollarSign, CreditCard } from 'lucide-react';
+import { LogOut, User, Settings, BarChart3, PlusCircle, Tags, DollarSign } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -46,8 +45,8 @@ const Dashboard = () => {
   const getPlanBadgeColor = (plan: string) => {
     switch (plan) {
       case 'FREE': return 'bg-gray-500';
-      case 'STANDARD': return 'bg-blue-500';
-      case 'TOP': return 'bg-gold-500';
+      case 'STANDARD': return 'bg-teal-500';
+      case 'TOP': return 'bg-teal-600';
       default: return 'bg-gray-500';
     }
   };
@@ -59,14 +58,14 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 via-navy-800 to-charcoal-800">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-teal-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-charcoal-800">
       {/* Header */}
       <header className="bg-white/10 backdrop-blur-md shadow-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,7 +76,7 @@ const Dashboard = () => {
                 {profile?.plan}
               </Badge>
               {isTrialActive && (
-                <Badge variant="outline" className="text-orange-300 border-orange-300">
+                <Badge variant="outline" className="text-teal-300 border-teal-300">
                   Trial: {trialDaysLeft} dias restantes
                 </Badge>
               )}
@@ -86,7 +85,7 @@ const Dashboard = () => {
               <span className="text-sm text-white/80">
                 Olá, {profile?.name || user?.email}
               </span>
-              <Button variant="outline" size="sm" onClick={signOut} className="border-white/20 text-white hover:bg-white/10">
+              <Button variant="outline" size="sm" onClick={signOut} className="border-teal-400 text-teal-400 hover:bg-teal-400 hover:text-navy-900">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
               </Button>
@@ -98,24 +97,24 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {profile?.plan !== 'TOP' ? (
-          <Card className="mb-8 border-orange-200 bg-orange-50/90 backdrop-blur-sm">
+          <Card className="mb-8 border-teal-200 bg-teal-50/90 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-orange-800">
+              <CardTitle className="text-teal-800">
                 Dashboard Disponível Apenas no Plano TOP
               </CardTitle>
-              <CardDescription className="text-orange-600">
+              <CardDescription className="text-teal-600">
                 Faça upgrade para o plano TOP para acessar todas as funcionalidades da dashboard.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="bg-orange-600 hover:bg-orange-700">
+              <Button className="bg-teal-600 hover:bg-teal-700">
                 Fazer Upgrade
               </Button>
             </CardContent>
           </Card>
         ) : (
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7 bg-white/10 backdrop-blur-md">
+            <TabsList className="grid w-full grid-cols-6 bg-white/10 backdrop-blur-md">
               <TabsTrigger value="overview" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
                 <BarChart3 className="h-4 w-4" />
                 <span>Visão Geral</span>
@@ -135,10 +134,6 @@ const Dashboard = () => {
               <TabsTrigger value="reports" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
                 <BarChart3 className="h-4 w-4" />
                 <span>Relatórios</span>
-              </TabsTrigger>
-              <TabsTrigger value="payment" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
-                <CreditCard className="h-4 w-4" />
-                <span>Pagamento</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
                 <Settings className="h-4 w-4" />
@@ -164,10 +159,6 @@ const Dashboard = () => {
 
             <TabsContent value="reports" className="space-y-6">
               <ReportsPanel />
-            </TabsContent>
-
-            <TabsContent value="payment" className="space-y-6">
-              <StripePayment />
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">

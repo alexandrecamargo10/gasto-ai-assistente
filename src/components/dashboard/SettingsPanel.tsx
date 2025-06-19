@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,9 +17,7 @@ const SettingsPanel = () => {
   
   const [settings, setSettings] = useState({
     assistant_name: 'gastoZ',
-    assistant_tone: 'amigavel',
-    total_budget_limit: '',
-    alert_percentage: 80
+    assistant_tone: 'amigavel'
   });
 
   const [profile, setProfile] = useState({
@@ -47,9 +46,7 @@ const SettingsPanel = () => {
       if (data) {
         setSettings({
           assistant_name: data.assistant_name || 'gastoZ',
-          assistant_tone: data.assistant_tone || 'amigavel',
-          total_budget_limit: data.total_budget_limit?.toString() || '',
-          alert_percentage: data.alert_percentage || 80
+          assistant_tone: data.assistant_tone || 'amigavel'
         });
       }
     } catch (error) {
@@ -84,7 +81,6 @@ const SettingsPanel = () => {
     try {
       const settingsData = {
         ...settings,
-        total_budget_limit: settings.total_budget_limit ? parseFloat(settings.total_budget_limit) : null,
         user_id: user?.id
       };
 
@@ -137,23 +133,23 @@ const SettingsPanel = () => {
   };
 
   if (loading) {
-    return <div>Carregando...</div>;
+    return <div className="text-white">Carregando...</div>;
   }
 
   return (
     <div className="space-y-6">
       {/* Configurações do Perfil */}
-      <Card>
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
-          <CardTitle>Informações do Perfil</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Informações do Perfil</CardTitle>
+          <CardDescription className="text-white/60">
             Atualize suas informações pessoais
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="name" className="text-white">Nome</Label>
               <Input
                 id="name"
                 value={profile.name}
@@ -161,7 +157,7 @@ const SettingsPanel = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
+              <Label htmlFor="phone" className="text-white">Telefone</Label>
               <Input
                 id="phone"
                 value={profile.phone}
@@ -172,7 +168,7 @@ const SettingsPanel = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="whatsapp">Número do WhatsApp</Label>
+            <Label htmlFor="whatsapp" className="text-white">Número do WhatsApp</Label>
             <Input
               id="whatsapp"
               value={profile.whatsapp_number}
@@ -181,24 +177,24 @@ const SettingsPanel = () => {
             />
           </div>
 
-          <Button onClick={handleSaveProfile} disabled={saving}>
+          <Button onClick={handleSaveProfile} disabled={saving} className="bg-teal-600 hover:bg-teal-700">
             {saving ? 'Salvando...' : 'Salvar Perfil'}
           </Button>
         </CardContent>
       </Card>
 
       {/* Configurações do Assistente */}
-      <Card>
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
-          <CardTitle>Configurações do Assistente</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Configurações do Assistente</CardTitle>
+          <CardDescription className="text-white/60">
             Personalize como o assistente interage com você
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="assistant_name">Nome do Assistente</Label>
+              <Label htmlFor="assistant_name" className="text-white">Nome do Assistente</Label>
               <Input
                 id="assistant_name"
                 value={settings.assistant_name}
@@ -207,7 +203,7 @@ const SettingsPanel = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="assistant_tone">Tom de Voz</Label>
+              <Label htmlFor="assistant_tone" className="text-white">Tom de Voz</Label>
               <Select 
                 value={settings.assistant_tone} 
                 onValueChange={(value) => setSettings({...settings, assistant_tone: value})}
@@ -225,58 +221,17 @@ const SettingsPanel = () => {
             </div>
           </div>
 
-          <Button onClick={handleSaveSettings} disabled={saving}>
+          <Button onClick={handleSaveSettings} disabled={saving} className="bg-teal-600 hover:bg-teal-700">
             {saving ? 'Salvando...' : 'Salvar Configurações'}
           </Button>
         </CardContent>
       </Card>
 
-      {/* Configurações de Orçamento */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Limites de Orçamento</CardTitle>
-          <CardDescription>
-            Configure seus limites de gastos e alertas
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="budget_limit">Limite de Orçamento Total (R$)</Label>
-              <Input
-                id="budget_limit"
-                type="number"
-                step="0.01"
-                value={settings.total_budget_limit}
-                onChange={(e) => setSettings({...settings, total_budget_limit: e.target.value})}
-                placeholder="Ex: 3000.00"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="alert_percentage">Porcentagem para Alerta (%)</Label>
-              <Input
-                id="alert_percentage"
-                type="number"
-                min="1"
-                max="100"
-                value={settings.alert_percentage}
-                onChange={(e) => setSettings({...settings, alert_percentage: parseInt(e.target.value)})}
-              />
-            </div>
-          </div>
-
-          <Button onClick={handleSaveSettings} disabled={saving}>
-            {saving ? 'Salvando...' : 'Salvar Limites'}
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* Campo para Cupom */}
-      <Card>
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
-          <CardTitle>Cupom de Desconto</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Cupom de Desconto</CardTitle>
+          <CardDescription className="text-white/60">
             Insira um cupom promocional para desbloquear benefícios
           </CardDescription>
         </CardHeader>
@@ -286,7 +241,7 @@ const SettingsPanel = () => {
               placeholder="Digite o código do cupom"
               className="flex-1"
             />
-            <Button>
+            <Button className="bg-teal-600 hover:bg-teal-700">
               Aplicar Cupom
             </Button>
           </div>

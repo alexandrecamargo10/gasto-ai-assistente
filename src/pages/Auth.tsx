@@ -44,19 +44,19 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 via-navy-800 to-charcoal-800 p-4">
       {/* Botão de voltar */}
       <Link 
         to="/" 
-        className="absolute top-4 left-4 flex items-center space-x-2 text-white hover:text-blue-300 transition-colors"
+        className="absolute top-4 left-4 flex items-center space-x-2 text-white hover:text-teal-300 transition-colors"
       >
         <ArrowLeft className="h-5 w-5" />
-        <span>Voltar para página de vendas</span>
+        <span>Voltar para a página inicial</span>
       </Link>
 
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-blue-600">gastoZ</CardTitle>
+          <CardTitle className="text-2xl font-bold text-teal-600">gastoZ</CardTitle>
           <CardDescription>
             Seu assistente pessoal de finanças via WhatsApp
           </CardDescription>
