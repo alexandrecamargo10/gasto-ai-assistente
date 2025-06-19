@@ -9,7 +9,339 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      category_limits: {
+        Row: {
+          category: Database["public"]["Enums"]["expense_category"] | null
+          created_at: string
+          custom_category_id: string | null
+          id: string
+          limit_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["expense_category"] | null
+          created_at?: string
+          custom_category_id?: string | null
+          id?: string
+          limit_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["expense_category"] | null
+          created_at?: string
+          custom_category_id?: string | null
+          id?: string
+          limit_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_limits_custom_category_id_fkey"
+            columns: ["custom_category_id"]
+            isOneToOne: false
+            referencedRelation: "custom_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_limits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupon_usages: {
+        Row: {
+          coupon_id: string
+          id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_id: string
+          id?: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string
+          id?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_usages_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_usages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          days_granted: number
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          plan_granted: Database["public"]["Enums"]["user_plan"]
+          times_used: number | null
+          updated_at: string
+          usage_limit: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          days_granted: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          plan_granted: Database["public"]["Enums"]["user_plan"]
+          times_used?: number | null
+          updated_at?: string
+          usage_limit?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          days_granted?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          plan_granted?: Database["public"]["Enums"]["user_plan"]
+          times_used?: number | null
+          updated_at?: string
+          usage_limit?: number | null
+        }
+        Relationships: []
+      }
+      custom_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_categories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["expense_category"] | null
+          created_at: string
+          custom_category_id: string | null
+          description: string
+          expense_date: string
+          id: string
+          payment_method: string | null
+          updated_at: string
+          user_id: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          amount: number
+          category?: Database["public"]["Enums"]["expense_category"] | null
+          created_at?: string
+          custom_category_id?: string | null
+          description: string
+          expense_date?: string
+          id?: string
+          payment_method?: string | null
+          updated_at?: string
+          user_id: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["expense_category"] | null
+          created_at?: string
+          custom_category_id?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          payment_method?: string | null
+          updated_at?: string
+          user_id?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_custom_category_id_fkey"
+            columns: ["custom_category_id"]
+            isOneToOne: false
+            referencedRelation: "custom_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          phone: string | null
+          plan: Database["public"]["Enums"]["user_plan"]
+          trial_ends_at: string | null
+          updated_at: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          phone?: string | null
+          plan?: Database["public"]["Enums"]["user_plan"]
+          trial_ends_at?: string | null
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          phone?: string | null
+          plan?: Database["public"]["Enums"]["user_plan"]
+          trial_ends_at?: string | null
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan: Database["public"]["Enums"]["user_plan"]
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan: Database["public"]["Enums"]["user_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["user_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_settings: {
+        Row: {
+          alert_percentage: number | null
+          assistant_name: string | null
+          assistant_tone: string | null
+          created_at: string
+          id: string
+          total_budget_limit: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_percentage?: number | null
+          assistant_name?: string | null
+          assistant_tone?: string | null
+          created_at?: string
+          id?: string
+          total_budget_limit?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_percentage?: number | null
+          assistant_name?: string | null
+          assistant_tone?: string | null
+          created_at?: string
+          id?: string
+          total_budget_limit?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +350,21 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      expense_category:
+        | "alimentacao"
+        | "transporte"
+        | "moradia"
+        | "saude"
+        | "educacao"
+        | "lazer"
+        | "vestuario"
+        | "contas"
+        | "investimentos"
+        | "salario"
+        | "diversos"
+        | "assinaturas"
+      subscription_status: "active" | "canceled" | "trial" | "expired"
+      user_plan: "FREE" | "STANDARD" | "TOP"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +479,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      expense_category: [
+        "alimentacao",
+        "transporte",
+        "moradia",
+        "saude",
+        "educacao",
+        "lazer",
+        "vestuario",
+        "contas",
+        "investimentos",
+        "salario",
+        "diversos",
+        "assinaturas",
+      ],
+      subscription_status: ["active", "canceled", "trial", "expired"],
+      user_plan: ["FREE", "STANDARD", "TOP"],
+    },
   },
 } as const
