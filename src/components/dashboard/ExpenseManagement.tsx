@@ -11,6 +11,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
+type ExpenseCategory = 'alimentacao' | 'transporte' | 'moradia' | 'saude' | 'educacao' | 'lazer' | 'vestuario' | 'contas' | 'investimentos' | 'salario' | 'diversos' | 'assinaturas';
+
 const ExpenseManagement = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -23,16 +25,32 @@ const ExpenseManagement = () => {
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
-    category: '',
+    category: '' as ExpenseCategory | '',
     custom_category_id: '',
     expense_date: new Date().toISOString().split('T')[0],
     payment_method: ''
   });
 
-  const defaultCategories = [
-    'alimentacao', 'transporte', 'moradia', 'saude', 'educacao',
-    'lazer', 'vestuario', 'contas', 'investimentos', 'salario',
-    'diversos', 'assinaturas'
+  const defaultCategories: { value: ExpenseCategory; label: string }[] = [
+    { value: 'alimentacao', label: 'Alimentação' },
+    { value: 'transporte', label: 'Transporte' },
+    { value: 'moradia', label: 'Moradia' },
+    { value: 'saude', label: 'Saúde' },
+    { value: 'educacao', label: 'Educação' },
+    { value: 'lazer', label: 'Lazer' },
+    { value: 'vestuario', label: 'Vestuário' },
+    { value: 'contas', label: 'Contas' },
+    { value: 'investimentos', label: 'Investimentos' },
+    { value: 'salario', label: 'Salário' },
+    { value: 'diversos', label: 'Diversos' },
+    { value: 'assinaturas', label: 'Assinaturas' }
+  ];
+
+  const paymentMethods = [
+    { value: 'dinheiro', label: 'Dinheiro' },
+    { value: 'pix', label: 'PIX' },
+    { value: 'credito', label: 'Crédito' },
+    { value: 'debito', label: 'Débito' }
   ];
 
   useEffect(() => {
@@ -83,11 +101,13 @@ const ExpenseManagement = () => {
     
     try {
       const expenseData = {
-        ...formData,
         amount: parseFloat(formData.amount),
+        description: formData.description,
         user_id: user?.id,
-        category: formData.custom_category_id ? null : formData.category,
-        custom_category_id: formData.custom_category_id || null
+        category: formData.custom_category_id ? null : (formData.category as ExpenseCategory),
+        custom_category_id: formData.custom_category_id || null,
+        expense_date: formData.expense_date,
+        payment_method: formData.payment_method || 'não informado'
       };
 
       let error;
@@ -99,7 +119,7 @@ const ExpenseManagement = () => {
       } else {
         ({ error } = await supabase
           .from('expenses')
-          .insert([expenseData]));
+          .insert(expenseData));
       }
 
       if (error) throw error;
@@ -185,18 +205,18 @@ const ExpenseManagement = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Gerenciar Gastos</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-white">Gerenciar Gastos</CardTitle>
+              <CardDescription className="text-white/60">
                 Adicione, edite ou remova seus gastos
               </CardDescription>
             </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
+                <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Gasto
                 </Button>
@@ -250,7 +270,7 @@ const ExpenseManagement = () => {
                         if (categories.find(cat => cat.id === value)) {
                           setFormData({...formData, custom_category_id: value, category: ''});
                         } else {
-                          setFormData({...formData, category: value, custom_category_id: ''});
+                          setFormData({...formData, category: value as ExpenseCategory, custom_category_id: ''});
                         }
                       }}
                     >
@@ -259,8 +279,8 @@ const ExpenseManagement = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {defaultCategories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
                           </SelectItem>
                         ))}
                         {categories.map((cat) => (
@@ -274,12 +294,21 @@ const ExpenseManagement = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="payment_method">Forma de Pagamento</Label>
-                    <Input
-                      id="payment_method"
-                      value={formData.payment_method}
-                      onChange={(e) => setFormData({...formData, payment_method: e.target.value})}
-                      placeholder="Ex: Cartão de crédito, Dinheiro, PIX..."
-                    />
+                    <Select 
+                      value={formData.payment_method} 
+                      onValueChange={(value) => setFormData({...formData, payment_method: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a forma de pagamento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map((method) => (
+                          <SelectItem key={method.value} value={method.value}>
+                            {method.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <DialogFooter>
@@ -298,23 +327,23 @@ const ExpenseManagement = () => {
         <CardContent>
           <div className="space-y-4">
             {expenses.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
+              <p className="text-center text-white/60 py-8">
                 Nenhum gasto registrado ainda
               </p>
             ) : (
               expenses.map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={expense.id} className="flex items-center justify-between p-4 border border-white/20 rounded-lg bg-white/5">
                   <div className="flex-1">
                     <div className="flex items-center space-x-4">
                       <div>
-                        <p className="font-medium">{expense.description}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {expense.category || expense.custom_categories?.name}
+                        <p className="font-medium text-white">{expense.description}</p>
+                        <p className="text-sm text-white/60">
+                          {expense.category || expense.custom_categories?.name} • {expense.payment_method || 'não informado'}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-lg">{formatCurrency(Number(expense.amount))}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium text-lg text-white">{formatCurrency(Number(expense.amount))}</p>
+                        <p className="text-sm text-white/60">
                           {new Date(expense.expense_date).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
@@ -325,6 +354,7 @@ const ExpenseManagement = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => openEditDialog(expense)}
+                      className="border-white/20 text-white hover:bg-white/10"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -332,6 +362,7 @@ const ExpenseManagement = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(expense.id)}
+                      className="border-red-300 text-red-300 hover:bg-red-500/10"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

@@ -79,13 +79,6 @@ const DashboardOverview = () => {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
   if (loading) {
     return <div>Carregando...</div>;
   }
@@ -98,61 +91,61 @@ const DashboardOverview = () => {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-white">
               Gastos Este Mês
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-white/60" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalThisMonth)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{formatCurrency(stats.totalThisMonth)}</div>
+            <p className="text-xs text-white/60">
               {monthlyGrowth > 0 ? '+' : ''}{monthlyGrowth.toFixed(1)}% em relação ao mês passado
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-white">
               Mês Anterior
             </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-white/60" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalLastMonth)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{formatCurrency(stats.totalLastMonth)}</div>
+            <p className="text-xs text-white/60">
               Comparativo mensal
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-white">
               Total de Gastos
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-white/60" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalExpenses}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{stats.totalExpenses}</div>
+            <p className="text-xs text-white/60">
               Registros totais
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-white">
               Categorias
             </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <AlertTriangle className="h-4 w-4 text-white/60" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.categoriesCount}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-white">{stats.categoriesCount}</div>
+            <p className="text-xs text-white/60">
               Categorias personalizadas
             </p>
           </CardContent>
@@ -160,31 +153,31 @@ const DashboardOverview = () => {
       </div>
 
       {/* Recent Expenses */}
-      <Card>
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
-          <CardTitle>Gastos Recentes</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-white">Gastos Recentes</CardTitle>
+          <CardDescription className="text-white/60">
             Seus últimos 5 gastos registrados
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {recentExpenses.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
+              <p className="text-center text-white/60 py-4">
                 Nenhum gasto registrado ainda
               </p>
             ) : (
               recentExpenses.map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between border-b pb-2">
+                <div key={expense.id} className="flex items-center justify-between border-b border-white/20 pb-2">
                   <div>
-                    <p className="font-medium">{expense.description}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-white">{expense.description}</p>
+                    <p className="text-sm text-white/60">
                       {expense.category || expense.custom_categories?.name}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">{formatCurrency(Number(expense.amount))}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-white">{formatCurrency(Number(expense.amount))}</p>
+                    <p className="text-sm text-white/60">
                       {new Date(expense.expense_date).toLocaleDateString('pt-BR')}
                     </p>
                   </div>

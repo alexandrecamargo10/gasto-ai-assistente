@@ -11,7 +11,9 @@ import ExpenseManagement from '@/components/dashboard/ExpenseManagement';
 import CategoryManagement from '@/components/dashboard/CategoryManagement';
 import SettingsPanel from '@/components/dashboard/SettingsPanel';
 import ReportsPanel from '@/components/dashboard/ReportsPanel';
-import { LogOut, User, Settings, BarChart3, PlusCircle, Tags } from 'lucide-react';
+import CategoryLimits from '@/components/dashboard/CategoryLimits';
+import StripePayment from '@/components/dashboard/StripePayment';
+import { LogOut, User, Settings, BarChart3, PlusCircle, Tags, DollarSign, CreditCard } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -64,27 +66,27 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white/10 backdrop-blur-md shadow-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-blue-600">gastoZ</h1>
+              <h1 className="text-2xl font-bold text-white">gastoZ</h1>
               <Badge className={getPlanBadgeColor(profile?.plan)}>
                 {profile?.plan}
               </Badge>
               {isTrialActive && (
-                <Badge variant="outline" className="text-orange-600 border-orange-300">
+                <Badge variant="outline" className="text-orange-300 border-orange-300">
                   Trial: {trialDaysLeft} dias restantes
                 </Badge>
               )}
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-white/80">
                 Olá, {profile?.name || user?.email}
               </span>
-              <Button variant="outline" size="sm" onClick={signOut}>
+              <Button variant="outline" size="sm" onClick={signOut} className="border-white/20 text-white hover:bg-white/10">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
               </Button>
@@ -96,7 +98,7 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {profile?.plan !== 'TOP' ? (
-          <Card className="mb-8 border-orange-200 bg-orange-50">
+          <Card className="mb-8 border-orange-200 bg-orange-50/90 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-orange-800">
                 Dashboard Disponível Apenas no Plano TOP
@@ -113,24 +115,32 @@ const Dashboard = () => {
           </Card>
         ) : (
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="overview" className="flex items-center space-x-2">
+            <TabsList className="grid w-full grid-cols-7 bg-white/10 backdrop-blur-md">
+              <TabsTrigger value="overview" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
                 <BarChart3 className="h-4 w-4" />
                 <span>Visão Geral</span>
               </TabsTrigger>
-              <TabsTrigger value="expenses" className="flex items-center space-x-2">
+              <TabsTrigger value="expenses" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
                 <PlusCircle className="h-4 w-4" />
                 <span>Gastos</span>
               </TabsTrigger>
-              <TabsTrigger value="categories" className="flex items-center space-x-2">
+              <TabsTrigger value="categories" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
                 <Tags className="h-4 w-4" />
                 <span>Categorias</span>
               </TabsTrigger>
-              <TabsTrigger value="reports" className="flex items-center space-x-2">
+              <TabsTrigger value="limits" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
+                <DollarSign className="h-4 w-4" />
+                <span>Limites</span>
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
                 <BarChart3 className="h-4 w-4" />
                 <span>Relatórios</span>
               </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center space-x-2">
+              <TabsTrigger value="payment" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
+                <CreditCard className="h-4 w-4" />
+                <span>Pagamento</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
                 <Settings className="h-4 w-4" />
                 <span>Configurações</span>
               </TabsTrigger>
@@ -148,8 +158,16 @@ const Dashboard = () => {
               <CategoryManagement />
             </TabsContent>
 
+            <TabsContent value="limits" className="space-y-6">
+              <CategoryLimits />
+            </TabsContent>
+
             <TabsContent value="reports" className="space-y-6">
               <ReportsPanel />
+            </TabsContent>
+
+            <TabsContent value="payment" className="space-y-6">
+              <StripePayment />
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">
