@@ -18,7 +18,7 @@ const ReportsPanel = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | ''>('');
   const [dateRange, setDateRange] = useState({
     start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
@@ -188,7 +188,7 @@ const ReportsPanel = () => {
     });
     
     // Footer
-    const pageCount = doc.internal.getNumberOfPages();
+    const pageCount = (doc as any).internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
@@ -256,7 +256,7 @@ const ReportsPanel = () => {
 
             <div className="space-y-2">
               <Label htmlFor="category" className="text-white">Categoria</Label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as ExpenseCategory | '')}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as categorias" />
                 </SelectTrigger>
