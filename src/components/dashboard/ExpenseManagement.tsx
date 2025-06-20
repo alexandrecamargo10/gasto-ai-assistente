@@ -25,10 +25,10 @@ const ExpenseManagement = () => {
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
-    category: '' as ExpenseCategory | '',
-    custom_category_id: '',
+    category: undefined as ExpenseCategory | undefined,
+    custom_category_id: undefined as string | undefined,
     expense_date: new Date().toISOString().split('T')[0],
-    payment_method: ''
+    payment_method: undefined as string | undefined
   });
 
   const defaultCategories: { value: ExpenseCategory; label: string }[] = [
@@ -171,10 +171,10 @@ const ExpenseManagement = () => {
     setFormData({
       amount: '',
       description: '',
-      category: '',
-      custom_category_id: '',
+      category: undefined,
+      custom_category_id: undefined,
       expense_date: new Date().toISOString().split('T')[0],
-      payment_method: ''
+      payment_method: undefined
     });
     setEditingExpense(null);
   };
@@ -184,10 +184,10 @@ const ExpenseManagement = () => {
     setFormData({
       amount: expense.amount.toString(),
       description: expense.description,
-      category: expense.category || '',
-      custom_category_id: expense.custom_category_id || '',
+      category: expense.category || undefined,
+      custom_category_id: expense.custom_category_id || undefined,
       expense_date: expense.expense_date,
-      payment_method: expense.payment_method || ''
+      payment_method: expense.payment_method || undefined
     });
     setDialogOpen(true);
   };
@@ -216,7 +216,7 @@ const ExpenseManagement = () => {
             </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="bg-teal-600 hover:bg-teal-700">
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Gasto
                 </Button>
@@ -265,12 +265,12 @@ const ExpenseManagement = () => {
                   <div className="space-y-2">
                     <Label>Categoria</Label>
                     <Select 
-                      value={formData.custom_category_id || formData.category} 
+                      value={formData.custom_category_id || formData.category || ''} 
                       onValueChange={(value) => {
                         if (categories.find(cat => cat.id === value)) {
-                          setFormData({...formData, custom_category_id: value, category: ''});
+                          setFormData({...formData, custom_category_id: value, category: undefined});
                         } else {
-                          setFormData({...formData, category: value as ExpenseCategory, custom_category_id: ''});
+                          setFormData({...formData, category: value as ExpenseCategory, custom_category_id: undefined});
                         }
                       }}
                     >
@@ -295,7 +295,7 @@ const ExpenseManagement = () => {
                   <div className="space-y-2">
                     <Label htmlFor="payment_method">Forma de Pagamento</Label>
                     <Select 
-                      value={formData.payment_method} 
+                      value={formData.payment_method || ''} 
                       onValueChange={(value) => setFormData({...formData, payment_method: value})}
                     >
                       <SelectTrigger>
