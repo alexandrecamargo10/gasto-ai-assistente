@@ -229,6 +229,9 @@ export type Database = {
           name: string | null
           phone: string | null
           plan: Database["public"]["Enums"]["user_plan"]
+          stripe_customer_id: string | null
+          subscription_end_date: string | null
+          subscription_status: string | null
           trial_ends_at: string | null
           updated_at: string
           whatsapp_number: string | null
@@ -240,6 +243,9 @@ export type Database = {
           name?: string | null
           phone?: string | null
           plan?: Database["public"]["Enums"]["user_plan"]
+          stripe_customer_id?: string | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           whatsapp_number?: string | null
@@ -251,6 +257,9 @@ export type Database = {
           name?: string | null
           phone?: string | null
           plan?: Database["public"]["Enums"]["user_plan"]
+          stripe_customer_id?: string | null
+          subscription_end_date?: string | null
+          subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           whatsapp_number?: string | null
@@ -341,6 +350,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          token: string
+          updated_at: string
+          user_id: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          token: string
+          updated_at?: string
+          user_id: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          token?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
