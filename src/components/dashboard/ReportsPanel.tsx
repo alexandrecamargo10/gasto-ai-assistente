@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,12 +7,16 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Calendar, TrendingUp, TrendingDown, DollarSign, FileText, Download } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import { useToast } from '@/hooks/use-toast';
 
 const ReportsPanel = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('month');
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -121,6 +124,115 @@ const ReportsPanel = () => {
     return categoryData.length > 0 
       ? categoryData.reduce((max, cat) => cat.value > max.value ? cat : max)
       : { name: 'N/A', value: 0 };
+  };
+
+  const generatePDFReport = async () => {
+    setExportingPDF(true);
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 20;
+
+      // Título
+      doc.setFontSize(20);
+      doc.setTextColor(6, 182, 212); // teal-500
+      doc.text('gastoZ - Relatório de Gastos', margin, margin);
+
+      // Período
+      const periodText = dateRange === 'month' ? 'Este Mês' : 'Este Ano';
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Período: ${periodText}`, margin, margin + 15);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, margin, margin + 25);
+
+      let currentY = margin + 45;
+
+      // Resumo
+      doc.setFontSize(16);
+      doc.setTextColor(6, 182, 212);
+      doc.text('Resumo', margin, currentY);
+      currentY += 15;
+
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Total de Gastos: R$ ${getTotalExpenses().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, currentY);
+      currentY += 10;
+      doc.text(`Média Diária: R$ ${getAverageDaily().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, currentY);
+      currentY += 10;
+      doc.text(`Total de Transações: ${expenses.length}`, margin, currentY);
+      currentY += 10;
+      doc.text(`Maior Categoria: ${getMostExpensiveCategory().name} (R$ ${getMostExpensiveCategory().value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`, margin, currentY);
+      currentY += 25;
+
+      // Gastos por categoria
+      doc.setFontSize(16);
+      doc.setTextColor(6, 182, 212);
+      doc.text('Gastos por Categoria', margin, currentY);
+      currentY += 15;
+
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      const categoryData = getCategoryData();
+      categoryData.forEach(category => {
+        doc.text(`${category.name}: R$ ${category.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, currentY);
+        currentY += 8;
+        if (currentY > 250) {
+          doc.addPage();
+          currentY = margin;
+        }
+      });
+
+      currentY += 15;
+
+      // Lista de transações
+      if (currentY > 200) {
+        doc.addPage();
+        currentY = margin;
+      }
+
+      doc.setFontSize(16);
+      doc.setTextColor(6, 182, 212);
+      doc.text('Transações Detalhadas', margin, currentY);
+      currentY += 15;
+
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      
+      expenses.slice(0, 50).forEach(expense => { // Limitar a 50 transações para não exceder páginas
+        const date = format(new Date(expense.expense_date), 'dd/MM/yyyy');
+        const category = expense.custom_categories?.name || expense.category || 'Outros';
+        const amount = `R$ ${Number(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        
+        doc.text(`${date} - ${category} - ${amount}`, margin, currentY);
+        if (expense.description) {
+          currentY += 6;
+          doc.text(`   ${expense.description}`, margin + 5, currentY);
+        }
+        currentY += 8;
+        
+        if (currentY > 270) {
+          doc.addPage();
+          currentY = margin;
+        }
+      });
+
+      // Salvar o PDF
+      doc.save(`gastoz-relatorio-${dateRange}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      
+      toast({
+        title: "PDF Exportado!",
+        description: "O relatório foi baixado com sucesso."
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar o PDF.",
+        variant: "destructive"
+      });
+    } finally {
+      setExportingPDF(false);
+    }
   };
 
   const categoryData = getCategoryData();
@@ -345,39 +457,26 @@ const ReportsPanel = () => {
         </CardContent>
       </Card>
 
-      {/* Ações de Export */}
+      {/* Ações de Export - Apenas PDF */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
           <CardTitle className="text-white flex items-center space-x-2">
             <FileText className="h-5 w-5" />
             <span>Exportar Relatório</span>
           </CardTitle>
+          <CardDescription className="text-white/60">
+            Baixe um relatório completo em PDF com todos os dados e gráficos
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              className="border-white/20 text-white hover:bg-white/10"
-              onClick={() => {
-                // Implementar export CSV
-                console.log('Export CSV');
-              }}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              CSV
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-white/20 text-white hover:bg-white/10"
-              onClick={() => {
-                // Implementar export PDF
-                console.log('Export PDF');
-              }}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              PDF
-            </Button>
-          </div>
+          <Button 
+            onClick={generatePDFReport}
+            disabled={exportingPDF}
+            className="bg-teal-600 hover:bg-teal-700 text-white"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {exportingPDF ? 'Gerando PDF...' : 'Exportar PDF'}
+          </Button>
         </CardContent>
       </Card>
     </div>

@@ -1,8 +1,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Gift, Smartphone } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Pricing = () => {
+  const navigate = useNavigate();
+
   const plans = [
     {
       name: "FREE",
@@ -58,8 +61,8 @@ const Pricing = () => {
   ];
 
   const handlePlanSelection = (planName: string) => {
-    console.log(`Plano selecionado: ${planName}`);
-    // Placeholder para futura integração com Supabase e Stripe
+    // Redirecionar para página de auth com o plano selecionado
+    navigate(`/auth?plan=${planName}`);
   };
 
   return (

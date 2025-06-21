@@ -1,13 +1,14 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Crown, Star, Zap } from 'lucide-react';
 
 const Auth = () => {
   const [loginEmail, setLoginEmail] = useState('');
@@ -16,6 +17,8 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const selectedPlan = searchParams.get('plan') || 'FREE';
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -43,6 +46,24 @@ const Auth = () => {
     setLoading(false);
   };
 
+  const getPlanIcon = (plan: string) => {
+    switch (plan) {
+      case 'FREE': return <Zap className="h-4 w-4" />;
+      case 'STANDARD': return <Star className="h-4 w-4" />;
+      case 'TOP': return <Crown className="h-4 w-4" />;
+      default: return <Zap className="h-4 w-4" />;
+    }
+  };
+
+  const getPlanColor = (plan: string) => {
+    switch (plan) {
+      case 'FREE': return 'bg-gray-500';
+      case 'STANDARD': return 'bg-blue-500';
+      case 'TOP': return 'bg-purple-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 via-navy-800 to-charcoal-800 p-4">
       {/* Botão de voltar */}
@@ -60,41 +81,27 @@ const Auth = () => {
           <CardDescription>
             Seu assistente pessoal de finanças via WhatsApp
           </CardDescription>
+          
+          {/* Mostrar plano selecionado */}
+          {selectedPlan && selectedPlan !== 'FREE' && (
+            <div className="mt-4">
+              <Badge className={`${getPlanColor(selectedPlan)} text-white`}>
+                {getPlanIcon(selectedPlan)}
+                <span className="ml-1">Plano {selectedPlan} Selecionado</span>
+              </Badge>
+              <p className="text-sm text-gray-600 mt-2">
+                {selectedPlan === 'TOP' && 'Você terá 7 dias grátis para testar!'}
+                {selectedPlan === 'STANDARD' && 'Controle completo das suas finanças!'}
+              </p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="space-y-4">
+          <Tabs defaultValue="signup" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
               <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              <TabsTrigger value="login">Entrar</TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="login" className="space-y-4">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Entrando...' : 'Entrar'}
-                </Button>
-              </form>
-            </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">
               <form onSubmit={handleSignup} className="space-y-4">
@@ -131,6 +138,40 @@ const Auth = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Cadastrando...' : 'Cadastrar'}
+                </Button>
+                
+                {selectedPlan !== 'FREE' && (
+                  <p className="text-xs text-gray-600 text-center">
+                    Após o cadastro, você será direcionado para configurar o pagamento do plano {selectedPlan}
+                  </p>
+                )}
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="login" className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Entrando...' : 'Entrar'}
                 </Button>
               </form>
             </TabsContent>
