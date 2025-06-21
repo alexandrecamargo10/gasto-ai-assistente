@@ -2,82 +2,58 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, FileText } from 'lucide-react';
-import jsPDF from 'jspdf';
-
-type ExpenseCategory = 'alimentacao' | 'transporte' | 'moradia' | 'saude' | 'educacao' | 'lazer' | 'vestuario' | 'contas' | 'investimentos' | 'salario' | 'diversos' | 'assinaturas';
+import { supabase } from '@/integrations/supabase/client';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { Calendar, TrendingUp, TrendingDown, DollarSign, FileText, Download } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const ReportsPanel = () => {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState<any[]>([]);
-  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | ''>('');
-  const [dateRange, setDateRange] = useState({
-    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
-  });
-
-  const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#F97316', '#06B6D4', '#84CC16'];
-
-  const defaultCategories: { value: ExpenseCategory; label: string }[] = [
-    { value: 'alimentacao', label: 'Alimentação' },
-    { value: 'transporte', label: 'Transporte' },
-    { value: 'moradia', label: 'Moradia' },
-    { value: 'saude', label: 'Saúde' },
-    { value: 'educacao', label: 'Educação' },
-    { value: 'lazer', label: 'Lazer' },
-    { value: 'vestuario', label: 'Vestuário' },
-    { value: 'contas', label: 'Contas' },
-    { value: 'investimentos', label: 'Investimentos' },
-    { value: 'salario', label: 'Salário' },
-    { value: 'diversos', label: 'Diversos' },
-    { value: 'assinaturas', label: 'Assinaturas' }
-  ];
+  const [dateRange, setDateRange] = useState('month');
 
   useEffect(() => {
     if (user) {
       fetchExpenses();
-      fetchProfile();
     }
-  }, [user, dateRange, selectedCategory]);
-
-  const fetchProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Erro ao buscar perfil:', error);
-    }
-  };
+  }, [user, dateRange]);
 
   const fetchExpenses = async () => {
+    setLoading(true);
     try {
-      let query = supabase
-        .from('expenses')
-        .select('*, custom_categories(name)')
-        .eq('user_id', user?.id)
-        .gte('expense_date', dateRange.start)
-        .lte('expense_date', dateRange.end)
-        .order('expense_date', { ascending: false });
+      let startDate, endDate;
+      const now = new Date();
 
-      if (selectedCategory) {
-        query = query.eq('category', selectedCategory);
+      switch (dateRange) {
+        case 'month':
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
+          break;
+        case 'year':
+          startDate = startOfYear(now);
+          endDate = endOfYear(now);
+          break;
+        default:
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('expenses')
+        .select(`
+          *,
+          custom_categories (
+            name,
+            color
+          )
+        `)
+        .eq('user_id', user?.id)
+        .gte('expense_date', startDate.toISOString().split('T')[0])
+        .lte('expense_date', endDate.toISOString().split('T')[0])
+        .order('expense_date', { ascending: true });
 
       if (error) throw error;
       setExpenses(data || []);
@@ -92,14 +68,14 @@ const ReportsPanel = () => {
     const categoryTotals: { [key: string]: number } = {};
     
     expenses.forEach(expense => {
-      const category = expense.category || expense.custom_categories?.name || 'Outros';
+      const category = expense.custom_categories?.name || expense.category || 'Outros';
       categoryTotals[category] = (categoryTotals[category] || 0) + Number(expense.amount);
     });
 
-    return Object.entries(categoryTotals).map(([name, value], index) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
+    return Object.entries(categoryTotals).map(([name, value]) => ({
+      name,
       value,
-      fill: colors[index % colors.length]
+      color: `#${Math.floor(Math.random()*16777215).toString(16)}`
     }));
   };
 
@@ -107,224 +83,144 @@ const ReportsPanel = () => {
     const monthlyTotals: { [key: string]: number } = {};
     
     expenses.forEach(expense => {
-      const month = new Date(expense.expense_date).toLocaleDateString('pt-BR', { 
-        month: 'short', 
-        year: 'numeric' 
-      });
+      const month = format(new Date(expense.expense_date), 'MMM', { locale: ptBR });
       monthlyTotals[month] = (monthlyTotals[month] || 0) + Number(expense.amount);
     });
 
-    return Object.entries(monthlyTotals).map(([month, total]) => ({
+    return Object.entries(monthlyTotals).map(([month, amount]) => ({
       month,
-      total
+      amount
     }));
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
+  const getDailyData = () => {
+    const dailyTotals: { [key: string]: number } = {};
     
-    // Header com logo gastoZ
-    doc.setFontSize(24);
-    doc.setTextColor(59, 130, 246);
-    doc.text('gastoZ', 20, 25);
-    
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Relatório de Gastos', 20, 40);
-    
-    // Informações do usuário
-    doc.setFontSize(12);
-    doc.text(`Nome: ${profile?.name || 'Não informado'}`, 20, 55);
-    doc.text(`Email: ${user?.email}`, 20, 65);
-    doc.text(`WhatsApp: ${profile?.whatsapp_number || 'Não informado'}`, 20, 75);
-    
-    // Período do relatório
-    doc.text(`Período: ${new Date(dateRange.start).toLocaleDateString('pt-BR')} a ${new Date(dateRange.end).toLocaleDateString('pt-BR')}`, 20, 85);
-    
-    if (selectedCategory) {
-      const categoryLabel = defaultCategories.find(cat => cat.value === selectedCategory)?.label || selectedCategory;
-      doc.text(`Categoria: ${categoryLabel}`, 20, 95);
-    }
-    
-    // Linha separadora
-    doc.line(20, 105, pageWidth - 20, 105);
-    
-    // Resumo
-    const totalAmount = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-    doc.setFontSize(14);
-    doc.text('Resumo:', 20, 120);
-    doc.setFontSize(12);
-    doc.text(`Total de gastos: ${formatCurrency(totalAmount)}`, 20, 135);
-    doc.text(`Número de transações: ${expenses.length}`, 20, 145);
-    
-    // Lista de gastos
-    let yPosition = 165;
-    doc.setFontSize(14);
-    doc.text('Detalhamento dos Gastos:', 20, yPosition);
-    yPosition += 15;
-    
-    doc.setFontSize(10);
-    expenses.forEach((expense, index) => {
-      if (yPosition > 270) {
-        doc.addPage();
-        yPosition = 20;
-      }
-      
-      const date = new Date(expense.expense_date).toLocaleDateString('pt-BR');
-      const category = expense.category || expense.custom_categories?.name || 'Outros';
-      const amount = formatCurrency(Number(expense.amount));
-      
-      doc.text(`${date} - ${expense.description}`, 20, yPosition);
-      doc.text(`${category} - ${amount}`, 20, yPosition + 8);
-      yPosition += 20;
+    expenses.forEach(expense => {
+      const day = format(new Date(expense.expense_date), 'dd/MM');
+      dailyTotals[day] = (dailyTotals[day] || 0) + Number(expense.amount);
     });
-    
-    // Footer
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.text(`Página ${i} de ${pageCount} - Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 20, doc.internal.pageSize.height - 10);
-    }
-    
-    doc.save(`relatorio-gastos-${dateRange.start}-${dateRange.end}.pdf`);
+
+    return Object.entries(dailyTotals).map(([day, amount]) => ({
+      day,
+      amount
+    }));
   };
 
-  const exportToCSV = () => {
-    const csvContent = [
-      ['Data', 'Descrição', 'Categoria', 'Valor', 'Forma de Pagamento'],
-      ...expenses.map(expense => [
-        new Date(expense.expense_date).toLocaleDateString('pt-BR'),
-        expense.description,
-        expense.category || expense.custom_categories?.name || '',
-        expense.amount,
-        expense.payment_method || ''
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `gastos_${dateRange.start}_${dateRange.end}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const getTotalExpenses = () => {
+    return expenses.reduce((total, expense) => total + Number(expense.amount), 0);
   };
 
-  const totalAmount = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const getAverageDaily = () => {
+    const days = new Set(expenses.map(e => e.expense_date)).size;
+    return days > 0 ? getTotalExpenses() / days : 0;
+  };
+
+  const getMostExpensiveCategory = () => {
+    const categoryData = getCategoryData();
+    return categoryData.length > 0 
+      ? categoryData.reduce((max, cat) => cat.value > max.value ? cat : max)
+      : { name: 'N/A', value: 0 };
+  };
+
+  const categoryData = getCategoryData();
+  const monthlyData = getMonthlyData();
+  const dailyData = getDailyData();
+  const totalExpenses = getTotalExpenses();
+  const averageDaily = getAverageDaily();
+  const mostExpensiveCategory = getMostExpensiveCategory();
+
+  const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00c49f'];
 
   if (loading) {
-    return <div>Carregando...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="bg-white/10 backdrop-blur-md border-white/20">
+              <CardContent className="p-6">
+                <div className="h-20 bg-white/10 rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* Filtros */}
+      {/* Controles de Período */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
-          <CardTitle className="text-white">Filtros do Relatório</CardTitle>
+          <CardTitle className="text-white flex items-center space-x-2">
+            <Calendar className="h-5 w-5" />
+            <span>Período do Relatório</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div className="space-y-2">
-              <Label htmlFor="start_date" className="text-white">Data Inicial</Label>
-              <Input
-                id="start_date"
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="end_date" className="text-white">Data Final</Label>
-              <Input
-                id="end_date"
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category" className="text-white">Categoria</Label>
-              <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as ExpenseCategory | '')}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as categorias" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todas as categorias</SelectItem>
-                  {defaultCategories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={exportToCSV} className="border-white/20 text-white hover:bg-white/10">
-                <Download className="h-4 w-4 mr-2" />
-                CSV
-              </Button>
-              <Button variant="outline" onClick={exportToPDF} className="border-white/20 text-white hover:bg-white/10">
-                <FileText className="h-4 w-4 mr-2" />
-                PDF
-              </Button>
-            </div>
+          <div className="flex space-x-2">
+            <Button
+              variant={dateRange === 'month' ? 'default' : 'outline'}
+              onClick={() => setDateRange('month')}
+              className={dateRange === 'month' ? 'bg-teal-600 hover:bg-teal-700' : 'border-white/20 text-white hover:bg-white/10'}
+            >
+              Este Mês
+            </Button>
+            <Button
+              variant={dateRange === 'year' ? 'default' : 'outline'}
+              onClick={() => setDateRange('year')}
+              className={dateRange === 'year' ? 'bg-teal-600 hover:bg-teal-700' : 'border-white/20 text-white hover:bg-white/10'}
+            >
+              Este Ano
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Resumo */}
+      {/* Resumo Estatístico */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader>
-            <CardTitle className="text-white">Total do Período</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white">Total de Gastos</CardTitle>
+            <DollarSign className="h-4 w-4 text-white/60" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-400">
-              {formatCurrency(totalAmount)}
+            <div className="text-2xl font-bold text-white">
+              R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-sm text-white/60">
+            <p className="text-xs text-white/60">
               {expenses.length} transações
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader>
-            <CardTitle className="text-white">Média Diária</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white">Média Diária</CardTitle>
+            <TrendingUp className="h-4 w-4 text-white/60" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">
-              {formatCurrency(totalAmount / 30)}
+            <div className="text-2xl font-bold text-white">
+              R$ {averageDaily.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-sm text-white/60">
-              Baseado em 30 dias
+            <p className="text-xs text-white/60">
+              Por dia
             </p>
           </CardContent>
         </Card>
 
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader>
-            <CardTitle className="text-white">Maior Gasto</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white">Maior Categoria</CardTitle>
+            <TrendingDown className="h-4 w-4 text-white/60" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">
-              {expenses.length > 0 ? formatCurrency(Math.max(...expenses.map(e => Number(e.amount)))) : formatCurrency(0)}
+            <div className="text-2xl font-bold text-white">
+              R$ {mostExpensiveCategory.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-sm text-white/60">
-              Gasto individual máximo
+            <p className="text-xs text-white/60">
+              {mostExpensiveCategory.name}
             </p>
           </CardContent>
         </Card>
@@ -332,87 +228,155 @@ const ReportsPanel = () => {
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico de Barras por Categoria */}
         <Card className="bg-white/10 backdrop-blur-md border-white/20">
           <CardHeader>
             <CardTitle className="text-white">Gastos por Categoria</CardTitle>
+            <CardDescription className="text-white/60">
+              Distribuição dos gastos por categoria
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={categoryData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="rgba(255,255,255,0.6)"
+                  fontSize={12}
+                />
+                <YAxis 
+                  stroke="rgba(255,255,255,0.6)"
+                  fontSize={12}
+                  tickFormatter={(value) => `R$ ${value}`}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(0,0,0,0.8)', 
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
+                />
+                <Bar dataKey="value" fill="#06b6d4" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Gráfico de Pizza */}
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white">Proporção por Categoria</CardTitle>
+            <CardDescription className="text-white/60">
+              Percentual de cada categoria
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={getCategoryData()}
+                  data={categoryData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {getCategoryData().map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(0,0,0,0.8)', 
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px'
+                  }}
+                  formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
+                />
               </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-          <CardHeader>
-            <CardTitle className="text-white">Evolução Mensal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getMonthlyData()}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
-                <Bar dataKey="total" fill="#3B82F6" />
-              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Lista Detalhada */}
+      {/* Gráfico de Linha Temporal */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
-          <CardTitle className="text-white">Gastos Detalhados</CardTitle>
+          <CardTitle className="text-white">Evolução dos Gastos</CardTitle>
           <CardDescription className="text-white/60">
-            Lista completa dos gastos no período selecionado
+            {dateRange === 'month' ? 'Gastos diários do mês' : 'Gastos mensais do ano'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {expenses.length === 0 ? (
-              <p className="text-center text-white/60 py-8">
-                Nenhum gasto encontrado no período selecionado
-              </p>
-            ) : (
-              expenses.map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between p-4 border border-white/20 rounded-lg bg-white/5">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <p className="font-medium text-white">{expense.description}</p>
-                        <p className="text-sm text-white/60">
-                          {expense.category || expense.custom_categories?.name}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-lg text-white">{formatCurrency(Number(expense.amount))}</p>
-                    <p className="text-sm text-white/60">
-                      {new Date(expense.expense_date).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={dateRange === 'month' ? dailyData : monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis 
+                dataKey={dateRange === 'month' ? 'day' : 'month'}
+                stroke="rgba(255,255,255,0.6)"
+                fontSize={12}
+              />
+              <YAxis 
+                stroke="rgba(255,255,255,0.6)"
+                fontSize={12}
+                tickFormatter={(value) => `R$ ${value}`}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(0,0,0,0.8)', 
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '8px'
+                }}
+                formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="amount" 
+                stroke="#06b6d4" 
+                strokeWidth={2}
+                dot={{ fill: '#06b6d4', strokeWidth: 2, r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Ações de Export */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center space-x-2">
+            <FileText className="h-5 w-5" />
+            <span>Exportar Relatório</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              className="border-white/20 text-white hover:bg-white/10"
+              onClick={() => {
+                // Implementar export CSV
+                console.log('Export CSV');
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              CSV
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-white/20 text-white hover:bg-white/10"
+              onClick={() => {
+                // Implementar export PDF
+                console.log('Export PDF');
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              PDF
+            </Button>
           </div>
         </CardContent>
       </Card>

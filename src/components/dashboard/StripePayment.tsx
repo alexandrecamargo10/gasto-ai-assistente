@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Crown, Star, Zap, CreditCard } from 'lucide-react';
+import { Check, Crown, Star, Zap, CreditCard, ExternalLink } from 'lucide-react';
 
 const StripePayment = () => {
   const { user } = useAuth();
@@ -38,15 +38,21 @@ const StripePayment = () => {
     }
   };
 
-  const handleUpgrade = async (plan: string, priceId: string) => {
+  const handleUpgrade = async (plan: string) => {
     setProcessingPayment(true);
     try {
-      // Aqui você implementaria a lógica do Stripe
-      // Por enquanto, apenas uma simulação
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan }
+      });
+
+      if (error) throw error;
+
+      // Abrir checkout em nova aba
+      window.open(data.url, '_blank');
+      
       toast({
-        title: "Stripe não configurado",
-        description: "A integração com Stripe precisa ser configurada com suas chaves de API",
-        variant: "destructive"
+        title: "Redirecionando...",
+        description: "Abrindo página de pagamento do Stripe"
       });
     } catch (error) {
       console.error('Erro ao processar pagamento:', error);
@@ -60,21 +66,45 @@ const StripePayment = () => {
     }
   };
 
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+
+      if (error) throw error;
+
+      // Abrir portal em nova aba
+      window.open(data.url, '_blank');
+      
+      toast({
+        title: "Redirecionando...",
+        description: "Abrindo portal de gerenciamento do Stripe"
+      });
+    } catch (error) {
+      console.error('Erro ao abrir portal:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível abrir o portal de gerenciamento",
+        variant: "destructive"
+      });
+    }
+  };
+
   const plans = [
     {
       name: 'FREE',
       price: 'Grátis',
       description: 'Para começar',
       features: [
-        'Até 10 transações por mês',
+        'Até 5 transações por dia',
         'Categorias básicas',
+        'Acesso via WhatsApp',
         'Relatórios simples'
       ],
       current: profile?.plan === 'FREE'
     },
     {
       name: 'STANDARD',
-      price: 'R$ 19,90/mês',
+      price: 'R$ 9,90/mês',
       description: 'Para uso pessoal',
       features: [
         'Transações ilimitadas',
@@ -88,7 +118,7 @@ const StripePayment = () => {
     },
     {
       name: 'TOP',
-      price: 'R$ 39,90/mês',
+      price: 'R$ 19,90/mês',
       description: 'Para máximo controle',
       features: [
         'Tudo do Standard',
@@ -169,7 +199,7 @@ const StripePayment = () => {
 
               {!plan.current && plan.priceId && (
                 <Button 
-                  onClick={() => handleUpgrade(plan.name, plan.priceId)}
+                  onClick={() => handleUpgrade(plan.name)}
                   disabled={processingPayment}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                 >
@@ -194,6 +224,27 @@ const StripePayment = () => {
         ))}
       </div>
 
+      {/* Gerenciar Assinatura */}
+      {(profile?.plan === 'STANDARD' || profile?.plan === 'TOP') && (
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white">Gerenciar Assinatura</CardTitle>
+            <CardDescription className="text-white/60">
+              Altere seu plano, método de pagamento ou cancele sua assinatura
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={handleManageSubscription}
+              className="w-full bg-purple-600 hover:bg-purple-700"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Abrir Portal do Stripe
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
           <CardTitle className="text-white">Informações sobre Pagamento</CardTitle>
@@ -205,8 +256,8 @@ const StripePayment = () => {
               <ul className="space-y-1">
                 <li>• Cartão de Crédito (Visa, Mastercard)</li>
                 <li>• Cartão de Débito</li>
-                <li>• PIX (em breve)</li>
-                <li>• Boleto (em breve)</li>
+                <li>• PIX (via Stripe)</li>
+                <li>• Boleto (via Stripe)</li>
               </ul>
             </div>
             <div>
@@ -214,7 +265,7 @@ const StripePayment = () => {
               <ul className="space-y-1">
                 <li>• Cobrança mensal automática</li>
                 <li>• Cancele a qualquer momento</li>
-                <li>• Reembolso em 7 dias</li>
+                <li>• Teste grátis de 7 dias (TOP)</li>
                 <li>• Sem taxas ocultas</li>
               </ul>
             </div>
