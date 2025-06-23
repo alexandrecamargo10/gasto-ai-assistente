@@ -1,27 +1,19 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Crown, Star, Zap, CheckCircle } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 const Auth = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupName, setSignupName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [searchParams] = useSearchParams();
-  const selectedPlan = searchParams.get('plan') || null;
-  const paymentSuccess = searchParams.get('payment') === 'success';
   
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,35 +32,6 @@ const Auth = () => {
     setLoading(false);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
-    if (!error) {
-      // Após cadastro bem-sucedido, sempre redirecionar para dashboard (plano FREE)
-      navigate('/dashboard');
-    }
-    setLoading(false);
-  };
-
-  const getPlanIcon = (plan: string) => {
-    switch (plan) {
-      case 'FREE': return <Zap className="h-4 w-4" />;
-      case 'STANDARD': return <Star className="h-4 w-4" />;
-      case 'TOP': return <Crown className="h-4 w-4" />;
-      default: return <Zap className="h-4 w-4" />;
-    }
-  };
-
-  const getPlanColor = (plan: string) => {
-    switch (plan) {
-      case 'FREE': return 'bg-gray-500';
-      case 'STANDARD': return 'bg-blue-500';
-      case 'TOP': return 'bg-purple-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 via-navy-800 to-charcoal-800 p-4">
       {/* Botão de voltar */}
@@ -84,122 +47,44 @@ const Auth = () => {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-teal-600">gastoZ</CardTitle>
           <CardDescription>
-            Seu assistente pessoal de finanças via WhatsApp
+            Entre em sua conta
           </CardDescription>
-          
-          {/* Mostrar sucesso do pagamento */}
-          {paymentSuccess && (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center justify-center space-x-2 text-green-700">
-                <CheckCircle className="h-5 w-5" />
-                <span className="font-medium">Pagamento realizado com sucesso!</span>
-              </div>
-              <p className="text-sm text-green-600 mt-2 text-center">
-                Complete seu cadastro para acessar sua conta
-              </p>
-            </div>
-          )}
-          
-          {/* Mostrar plano selecionado */}
-          {selectedPlan && selectedPlan !== 'FREE' && (
-            <div className="mt-4">
-              <Badge className={`${getPlanColor(selectedPlan)} text-white`}>
-                {getPlanIcon(selectedPlan)}
-                <span className="ml-1">Plano {selectedPlan} Selecionado</span>
-              </Badge>
-              <p className="text-sm text-gray-600 mt-2">
-                {selectedPlan === 'TOP' && 'Você terá 7 dias grátis para testar!'}
-                {selectedPlan === 'STANDARD' && 'Controle completo das suas finanças!'}
-              </p>
-            </div>
-          )}
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={paymentSuccess ? "signup" : "login"} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login" className="space-y-4">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Entrando...' : 'Entrar'}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup" className="space-y-4">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={signupName}
-                    onChange={(e) => setSignupName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Senha</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Cadastrando...' : 'Cadastrar'}
-                </Button>
-                
-                {!paymentSuccess && (
-                  <p className="text-xs text-gray-600 text-center">
-                    Após o cadastro, você começará com o plano FREE e poderá fazer upgrade a qualquer momento
-                  </p>
-                )}
-                
-                {paymentSuccess && selectedPlan && (
-                  <p className="text-xs text-green-600 text-center">
-                    Seu plano {selectedPlan} será ativado automaticamente após o cadastro
-                  </p>
-                )}
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Entrando...' : 'Entrar'}
+            </Button>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Não tem uma conta?{' '}
+              <Link to="/signup" className="text-teal-600 hover:text-teal-700 font-medium">
+                Escolher plano
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

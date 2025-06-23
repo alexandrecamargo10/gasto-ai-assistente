@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -83,6 +82,34 @@ const SimpleDashboard = () => {
     }
   };
 
+  const getPlanLimitations = (plan: string) => {
+    switch (plan) {
+      case 'FREE':
+        return [
+          "• 5 lançamentos por dia",
+          "• Relatórios diários e semanais apenas",
+          "• Histórico limitado a 1 semana",
+          "• Acesso via WhatsApp"
+        ];
+      case 'STANDARD':
+        return [
+          "• Lançamentos ilimitados",
+          "• Relatórios de até 1 ano",
+          "• Histórico completo",
+          "• Acesso via WhatsApp"
+        ];
+      case 'TOP':
+        return [
+          "• Sem limitações",
+          "• Dashboard web completa",
+          "• Histórico ilimitado",
+          "• Relatórios avançados"
+        ];
+      default:
+        return [];
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-navy-900 via-navy-800 to-charcoal-800">
@@ -130,6 +157,23 @@ const SimpleDashboard = () => {
         </CardContent>
       </Card>
 
+      {/* Limitações do Plano Atual */}
+      <Card className="bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader>
+          <CardTitle className="text-white">Seu Plano: {profile?.plan || 'FREE'}</CardTitle>
+          <CardDescription className="text-white/60">
+            Funcionalidades disponíveis no seu plano atual
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="text-white/80 space-y-2">
+            {getPlanLimitations(profile?.plan || 'FREE').map((limitation, index) => (
+              <li key={index}>{limitation}</li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+
       {/* Conexão WhatsApp */}
       <WhatsAppConnection />
 
@@ -159,7 +203,7 @@ const SimpleDashboard = () => {
               </div>
               <ul className="text-sm text-white/80 space-y-1">
                 <li>• Transações ilimitadas via WhatsApp</li>
-                <li>• Relatórios avançados</li>
+                <li>• Relatórios avançados (até 1 ano)</li>
                 <li>• Categorias personalizadas</li>
                 <li>• Alertas de orçamento</li>
                 <li>• Suporte prioritário</li>
@@ -202,6 +246,7 @@ const SimpleDashboard = () => {
                 <li>• Análises preditivas</li>
                 <li>• Gestão avançada de categorias</li>
                 <li>• Export em múltiplos formatos</li>
+                <li>• 7 dias grátis para testar</li>
               </ul>
               <Button 
                 onClick={handleUpgradeTop}

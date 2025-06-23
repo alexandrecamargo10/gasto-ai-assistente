@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Gift, Smartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -65,16 +64,11 @@ const Pricing = () => {
 
   const handlePlanSelection = (planName: string, checkoutUrl: string | null) => {
     if (planName === 'FREE') {
-      // Para plano FREE, redirecionar para página de auth sem plano selecionado
-      navigate('/auth');
+      // Para plano FREE, redirecionar para página de cadastro
+      navigate('/signup?plan=FREE');
     } else if (checkoutUrl) {
-      // Para planos pagos, adicionar parâmetros para redirecionamento correto
-      const currentOrigin = window.location.origin;
-      const modifiedUrl = checkoutUrl.replace(
-        /success_url=[^&]*/,
-        `success_url=${encodeURIComponent(`${currentOrigin}/auth?plan=${planName}&payment=success`)}`
-      );
-      window.open(modifiedUrl, '_blank');
+      // Para planos pagos, redirecionar para checkout do Stripe
+      window.open(checkoutUrl, '_blank');
     }
   };
 
