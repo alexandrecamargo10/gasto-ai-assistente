@@ -68,8 +68,13 @@ const Pricing = () => {
       // Para plano FREE, redirecionar para página de auth sem plano selecionado
       navigate('/auth');
     } else if (checkoutUrl) {
-      // Para planos pagos, redirecionar para checkout do Stripe
-      window.open(checkoutUrl, '_blank');
+      // Para planos pagos, adicionar parâmetros para redirecionamento correto
+      const currentOrigin = window.location.origin;
+      const modifiedUrl = checkoutUrl.replace(
+        /success_url=[^&]*/,
+        `success_url=${encodeURIComponent(`${currentOrigin}/auth?plan=${planName}&payment=success`)}`
+      );
+      window.open(modifiedUrl, '_blank');
     }
   };
 

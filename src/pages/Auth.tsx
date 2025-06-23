@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Crown, Star, Zap } from 'lucide-react';
+import { ArrowLeft, Crown, Star, Zap, CheckCircle } from 'lucide-react';
 
 const Auth = () => {
   const [loginEmail, setLoginEmail] = useState('');
@@ -19,6 +19,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const selectedPlan = searchParams.get('plan') || null;
+  const paymentSuccess = searchParams.get('payment') === 'success';
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -86,6 +87,19 @@ const Auth = () => {
             Seu assistente pessoal de finanças via WhatsApp
           </CardDescription>
           
+          {/* Mostrar sucesso do pagamento */}
+          {paymentSuccess && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center justify-center space-x-2 text-green-700">
+                <CheckCircle className="h-5 w-5" />
+                <span className="font-medium">Pagamento realizado com sucesso!</span>
+              </div>
+              <p className="text-sm text-green-600 mt-2 text-center">
+                Complete seu cadastro para acessar sua conta
+              </p>
+            </div>
+          )}
+          
           {/* Mostrar plano selecionado */}
           {selectedPlan && selectedPlan !== 'FREE' && (
             <div className="mt-4">
@@ -101,7 +115,7 @@ const Auth = () => {
           )}
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="space-y-4">
+          <Tabs defaultValue={paymentSuccess ? "signup" : "login"} className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Entrar</TabsTrigger>
               <TabsTrigger value="signup">Cadastrar</TabsTrigger>
@@ -172,9 +186,17 @@ const Auth = () => {
                   {loading ? 'Cadastrando...' : 'Cadastrar'}
                 </Button>
                 
-                <p className="text-xs text-gray-600 text-center">
-                  Após o cadastro, você começará com o plano FREE e poderá fazer upgrade a qualquer momento
-                </p>
+                {!paymentSuccess && (
+                  <p className="text-xs text-gray-600 text-center">
+                    Após o cadastro, você começará com o plano FREE e poderá fazer upgrade a qualquer momento
+                  </p>
+                )}
+                
+                {paymentSuccess && selectedPlan && (
+                  <p className="text-xs text-green-600 text-center">
+                    Seu plano {selectedPlan} será ativado automaticamente após o cadastro
+                  </p>
+                )}
               </form>
             </TabsContent>
           </Tabs>
