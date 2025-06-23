@@ -10,6 +10,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Crown, Star, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
+
+type UserPlan = Database['public']['Enums']['user_plan'];
 
 const Signup = () => {
   const [signupEmail, setSignupEmail] = useState('');
@@ -17,7 +20,13 @@ const Signup = () => {
   const [signupName, setSignupName] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
-  const selectedPlan = searchParams.get('plan') || null;
+  
+  // Type the selectedPlan properly
+  const planParam = searchParams.get('plan');
+  const selectedPlan: UserPlan | null = planParam && ['FREE', 'STANDARD', 'TOP'].includes(planParam) 
+    ? planParam as UserPlan 
+    : null;
+  
   const paymentSuccess = searchParams.get('payment') === 'success';
   
   const { signUp, user } = useAuth();
@@ -62,13 +71,19 @@ const Signup = () => {
         // Aguardar um pouco para o usuário ser criado
         setTimeout(async () => {
           try {
+            const updateData: any = { 
+              plan: selectedPlan,
+              subscription_status: 'active'
+            };
+
+            // Adicionar trial apenas para plano TOP
+            if (selectedPlan === 'TOP') {
+              updateData.trial_ends_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            }
+
             const { error: updateError } = await supabase
               .from('profiles')
-              .update({ 
-                plan: selectedPlan,
-                subscription_status: 'active',
-                ...(selectedPlan === 'TOP' && { trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() })
-              })
+              .update(updateData)
               .eq('email', signupEmail);
 
             if (updateError) {
@@ -103,7 +118,7 @@ const Signup = () => {
     }
   };
 
-  const getPlanIcon = (plan: string) => {
+  const getPlanIcon = (plan: UserPlan) => {
     switch (plan) {
       case 'STANDARD': return <Star className="h-4 w-4" />;
       case 'TOP': return <Crown className="h-4 w-4" />;
@@ -111,7 +126,7 @@ const Signup = () => {
     }
   };
 
-  const getPlanColor = (plan: string) => {
+  const getPlanColor = (plan: UserPlan) => {
     switch (plan) {
       case 'STANDARD': return 'bg-blue-500';
       case 'TOP': return 'bg-purple-500';
