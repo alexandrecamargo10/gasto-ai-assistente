@@ -294,7 +294,7 @@ const ReportsPanel = () => {
             <span>Período do Relatório</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="bg-gray-500 hover:bg-gray-400">
           <div className="flex flex-wrap gap-2 mb-4">
             <Button variant={dateRange === 'week' ? 'default' : 'outline'} onClick={() => {
             setDateRange('week');
@@ -327,7 +327,7 @@ const ReportsPanel = () => {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full justify-start text-left font-normal border-white/20 text-white hover:bg-white/10", !customStartDate && "text-white/60")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customStartDate ? format(customStartDate, "dd/MM/yyyy") : <span className="text-emerald-600">Selecionar</span>}
+                    {customStartDate ? format(customStartDate, "dd/MM/yyyy") : <span>Selecionar</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -342,7 +342,7 @@ const ReportsPanel = () => {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full justify-start text-left font-normal border-white/20 text-white hover:bg-white/10", !customEndDate && "text-white/60")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customEndDate ? format(customEndDate, "dd/MM/yyyy") : <span className="text-emerald-600">Selecionar</span>}
+                    {customEndDate ? format(customEndDate, "dd/MM/yyyy") : <span>Selecionar</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
