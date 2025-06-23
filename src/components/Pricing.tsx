@@ -21,7 +21,8 @@ const Pricing = () => {
       ],
       cta: "Começar Grátis",
       popular: false,
-      color: "charcoal"
+      color: "charcoal",
+      checkoutUrl: null
     },
     {
       name: "STANDARD",
@@ -38,7 +39,8 @@ const Pricing = () => {
       ],
       cta: "Escolher Standard",
       popular: false,
-      color: "teal"
+      color: "teal",
+      checkoutUrl: "https://buy.stripe.com/test_bJedR93DC8xicDV8Ylao800"
     },
     {
       name: "TOP",
@@ -56,13 +58,19 @@ const Pricing = () => {
       ],
       cta: "Teste Grátis 7 Dias",
       popular: true,
-      color: "gradient"
+      color: "gradient",
+      checkoutUrl: "https://buy.stripe.com/test_00w00j3DC5l69rJdeBao801"
     }
   ];
 
-  const handlePlanSelection = (planName: string) => {
-    // Redirecionar para página de auth com o plano selecionado
-    navigate(`/auth?plan=${planName}`);
+  const handlePlanSelection = (planName: string, checkoutUrl: string | null) => {
+    if (planName === 'FREE') {
+      // Para plano FREE, redirecionar para página de auth sem plano selecionado
+      navigate('/auth');
+    } else if (checkoutUrl) {
+      // Para planos pagos, redirecionar para checkout do Stripe
+      window.open(checkoutUrl, '_blank');
+    }
   };
 
   return (
@@ -134,7 +142,7 @@ const Pricing = () => {
               </ul>
 
               <Button
-                onClick={() => handlePlanSelection(plan.name)}
+                onClick={() => handlePlanSelection(plan.name, plan.checkoutUrl)}
                 className={`w-full py-3 font-semibold text-lg transition-all duration-300 ${
                   plan.popular
                     ? 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl'

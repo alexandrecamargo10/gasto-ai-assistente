@@ -18,7 +18,7 @@ const Auth = () => {
   const [signupName, setSignupName] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
-  const selectedPlan = searchParams.get('plan') || 'FREE';
+  const selectedPlan = searchParams.get('plan') || null;
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
@@ -43,6 +43,10 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     const { error } = await signUp(signupEmail, signupPassword, signupName);
+    if (!error) {
+      // Após cadastro bem-sucedido, sempre redirecionar para dashboard (plano FREE)
+      navigate('/dashboard');
+    }
     setLoading(false);
   };
 
@@ -97,11 +101,39 @@ const Auth = () => {
           )}
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signup" className="space-y-4">
+          <Tabs defaultValue="login" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
               <TabsTrigger value="login">Entrar</TabsTrigger>
+              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="login" className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Entrando...' : 'Entrar'}
+                </Button>
+              </form>
+            </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">
               <form onSubmit={handleSignup} className="space-y-4">
@@ -140,39 +172,9 @@ const Auth = () => {
                   {loading ? 'Cadastrando...' : 'Cadastrar'}
                 </Button>
                 
-                {selectedPlan !== 'FREE' && (
-                  <p className="text-xs text-gray-600 text-center">
-                    Após o cadastro, você será direcionado para configurar o pagamento do plano {selectedPlan}
-                  </p>
-                )}
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="login" className="space-y-4">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Entrando...' : 'Entrar'}
-                </Button>
+                <p className="text-xs text-gray-600 text-center">
+                  Após o cadastro, você começará com o plano FREE e poderá fazer upgrade a qualquer momento
+                </p>
               </form>
             </TabsContent>
           </Tabs>

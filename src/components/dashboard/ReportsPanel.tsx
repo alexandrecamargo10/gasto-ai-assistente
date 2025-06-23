@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { Calendar, TrendingUp, TrendingDown, DollarSign, FileText, Download } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { Calendar as CalendarIcon, TrendingUp, TrendingDown, DollarSign, FileText, Download } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const ReportsPanel = () => {
   const { user } = useAuth();
@@ -17,12 +22,31 @@ const ReportsPanel = () => {
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('month');
   const [exportingPDF, setExportingPDF] = useState(false);
+  const [customStartDate, setCustomStartDate] = useState<Date>();
+  const [customEndDate, setCustomEndDate] = useState<Date>();
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
       fetchExpenses();
+      fetchProfile();
     }
-  }, [user, dateRange]);
+  }, [user, dateRange, customStartDate, customEndDate]);
+
+  const fetchProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Erro ao buscar perfil:', error);
+    }
+  };
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -30,18 +54,27 @@ const ReportsPanel = () => {
       let startDate, endDate;
       const now = new Date();
 
-      switch (dateRange) {
-        case 'month':
-          startDate = startOfMonth(now);
-          endDate = endOfMonth(now);
-          break;
-        case 'year':
-          startDate = startOfYear(now);
-          endDate = endOfYear(now);
-          break;
-        default:
-          startDate = startOfMonth(now);
-          endDate = endOfMonth(now);
+      if (dateRange === 'custom' && customStartDate && customEndDate) {
+        startDate = customStartDate;
+        endDate = customEndDate;
+      } else {
+        switch (dateRange) {
+          case 'week':
+            startDate = startOfWeek(now, { locale: ptBR });
+            endDate = endOfWeek(now, { locale: ptBR });
+            break;
+          case 'month':
+            startDate = startOfMonth(now);
+            endDate = endOfMonth(now);
+            break;
+          case 'year':
+            startDate = startOfYear(now);
+            endDate = endOfYear(now);
+            break;
+          default:
+            startDate = startOfMonth(now);
+            endDate = endOfMonth(now);
+        }
       }
 
       const { data, error } = await supabase
@@ -64,6 +97,122 @@ const ReportsPanel = () => {
       console.error('Erro ao buscar gastos:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generatePDFReport = async () => {
+    setExportingPDF(true);
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 20;
+
+      // Título principal
+      doc.setFontSize(20);
+      doc.setTextColor(6, 182, 212); // teal-500
+      doc.text('gastoZ - Relatório de Gastos', margin, margin);
+
+      // Nome do usuário
+      doc.setFontSize(14);
+      doc.setTextColor(6, 182, 212);
+      const userName = profile?.name || user?.email?.split('@')[0] || 'Usuário';
+      doc.text(`Usuário: ${userName}`, margin, margin + 10);
+
+      // Período
+      const periodText = dateRange === 'week' ? 'Esta Semana' : 
+                        dateRange === 'month' ? 'Este Mês' : 
+                        dateRange === 'year' ? 'Este Ano' : 'Período Personalizado';
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Período: ${periodText}`, margin, margin + 20);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, margin, margin + 28);
+
+      let currentY = margin + 40;
+
+      // Resumo
+      doc.setFontSize(16);
+      doc.setTextColor(6, 182, 212);
+      doc.text('Resumo', margin, currentY);
+      currentY += 10;
+
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Total de Gastos: R$ ${getTotalExpenses().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, currentY);
+      currentY += 8;
+      doc.text(`Média Diária: R$ ${getAverageDaily().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, currentY);
+      currentY += 8;
+      doc.text(`Total de Transações: ${expenses.length}`, margin, currentY);
+      currentY += 8;
+      doc.text(`Maior Categoria: ${getMostExpensiveCategory().name} (R$ ${getMostExpensiveCategory().value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`, margin, currentY);
+      currentY += 18;
+
+      // Gastos por categoria
+      doc.setFontSize(16);
+      doc.setTextColor(6, 182, 212);
+      doc.text('Gastos por Categoria', margin, currentY);
+      currentY += 10;
+
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      const categoryData = getCategoryData();
+      categoryData.forEach(category => {
+        doc.text(`${category.name}: R$ ${category.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, currentY);
+        currentY += 6;
+        if (currentY > 250) {
+          doc.addPage();
+          currentY = margin;
+        }
+      });
+
+      currentY += 12;
+
+      // Lista de transações
+      if (currentY > 200) {
+        doc.addPage();
+        currentY = margin;
+      }
+
+      doc.setFontSize(16);
+      doc.setTextColor(6, 182, 212);
+      doc.text('Transações Detalhadas', margin, currentY);
+      currentY += 10;
+
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      
+      expenses.slice(0, 50).forEach(expense => {
+        const date = format(new Date(expense.expense_date), 'dd/MM/yyyy');
+        const category = expense.custom_categories?.name || expense.category || 'Outros';
+        const amount = `R$ ${Number(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        
+        doc.text(`${date} - ${category} - ${amount}`, margin, currentY);
+        if (expense.description) {
+          currentY += 5;
+          doc.text(`   ${expense.description}`, margin + 5, currentY);
+        }
+        currentY += 6;
+        
+        if (currentY > 270) {
+          doc.addPage();
+          currentY = margin;
+        }
+      });
+
+      doc.save(`gastoz-relatorio-${dateRange}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      
+      toast({
+        title: "PDF Exportado!",
+        description: "O relatório foi baixado com sucesso."
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar o PDF.",
+        variant: "destructive"
+      });
+    } finally {
+      setExportingPDF(false);
     }
   };
 
@@ -126,115 +275,6 @@ const ReportsPanel = () => {
       : { name: 'N/A', value: 0 };
   };
 
-  const generatePDFReport = async () => {
-    setExportingPDF(true);
-    try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.width;
-      const margin = 20;
-
-      // Título
-      doc.setFontSize(20);
-      doc.setTextColor(6, 182, 212); // teal-500
-      doc.text('gastoZ - Relatório de Gastos', margin, margin);
-
-      // Período
-      const periodText = dateRange === 'month' ? 'Este Mês' : 'Este Ano';
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Período: ${periodText}`, margin, margin + 15);
-      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, margin, margin + 25);
-
-      let currentY = margin + 45;
-
-      // Resumo
-      doc.setFontSize(16);
-      doc.setTextColor(6, 182, 212);
-      doc.text('Resumo', margin, currentY);
-      currentY += 15;
-
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Total de Gastos: R$ ${getTotalExpenses().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, currentY);
-      currentY += 10;
-      doc.text(`Média Diária: R$ ${getAverageDaily().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, currentY);
-      currentY += 10;
-      doc.text(`Total de Transações: ${expenses.length}`, margin, currentY);
-      currentY += 10;
-      doc.text(`Maior Categoria: ${getMostExpensiveCategory().name} (R$ ${getMostExpensiveCategory().value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`, margin, currentY);
-      currentY += 25;
-
-      // Gastos por categoria
-      doc.setFontSize(16);
-      doc.setTextColor(6, 182, 212);
-      doc.text('Gastos por Categoria', margin, currentY);
-      currentY += 15;
-
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      const categoryData = getCategoryData();
-      categoryData.forEach(category => {
-        doc.text(`${category.name}: R$ ${category.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, margin, currentY);
-        currentY += 8;
-        if (currentY > 250) {
-          doc.addPage();
-          currentY = margin;
-        }
-      });
-
-      currentY += 15;
-
-      // Lista de transações
-      if (currentY > 200) {
-        doc.addPage();
-        currentY = margin;
-      }
-
-      doc.setFontSize(16);
-      doc.setTextColor(6, 182, 212);
-      doc.text('Transações Detalhadas', margin, currentY);
-      currentY += 15;
-
-      doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
-      
-      expenses.slice(0, 50).forEach(expense => { // Limitar a 50 transações para não exceder páginas
-        const date = format(new Date(expense.expense_date), 'dd/MM/yyyy');
-        const category = expense.custom_categories?.name || expense.category || 'Outros';
-        const amount = `R$ ${Number(expense.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-        
-        doc.text(`${date} - ${category} - ${amount}`, margin, currentY);
-        if (expense.description) {
-          currentY += 6;
-          doc.text(`   ${expense.description}`, margin + 5, currentY);
-        }
-        currentY += 8;
-        
-        if (currentY > 270) {
-          doc.addPage();
-          currentY = margin;
-        }
-      });
-
-      // Salvar o PDF
-      doc.save(`gastoz-relatorio-${dateRange}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-      
-      toast({
-        title: "PDF Exportado!",
-        description: "O relatório foi baixado com sucesso."
-      });
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível gerar o PDF.",
-        variant: "destructive"
-      });
-    } finally {
-      setExportingPDF(false);
-    }
-  };
-
   const categoryData = getCategoryData();
   const monthlyData = getMonthlyData();
   const dailyData = getDailyData();
@@ -266,25 +306,113 @@ const ReportsPanel = () => {
       <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
           <CardTitle className="text-white flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
+            <CalendarIcon className="h-5 w-5" />
             <span>Período do Relatório</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button
+              variant={dateRange === 'week' ? 'default' : 'outline'}
+              onClick={() => {
+                setDateRange('week');
+                setCustomStartDate(undefined);
+                setCustomEndDate(undefined);
+              }}
+              className={dateRange === 'week' ? 'bg-teal-600 hover:bg-teal-700' : 'border-white/20 text-white hover:bg-white/10'}
+            >
+              Esta Semana
+            </Button>
             <Button
               variant={dateRange === 'month' ? 'default' : 'outline'}
-              onClick={() => setDateRange('month')}
+              onClick={() => {
+                setDateRange('month');
+                setCustomStartDate(undefined);
+                setCustomEndDate(undefined);
+              }}
               className={dateRange === 'month' ? 'bg-teal-600 hover:bg-teal-700' : 'border-white/20 text-white hover:bg-white/10'}
             >
               Este Mês
             </Button>
             <Button
               variant={dateRange === 'year' ? 'default' : 'outline'}
-              onClick={() => setDateRange('year')}
+              onClick={() => {
+                setDateRange('year');
+                setCustomStartDate(undefined);
+                setCustomEndDate(undefined);
+              }}
               className={dateRange === 'year' ? 'bg-teal-600 hover:bg-teal-700' : 'border-white/20 text-white hover:bg-white/10'}
             >
               Este Ano
+            </Button>
+          </div>
+          
+          {/* Seletor de Período Personalizado */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+              <Label className="text-white text-sm">Data de Início</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal border-white/20 text-white hover:bg-white/10",
+                      !customStartDate && "text-white/60"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {customStartDate ? format(customStartDate, "dd/MM/yyyy") : <span>Selecionar</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={customStartDate}
+                    onSelect={setCustomStartDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div>
+              <Label className="text-white text-sm">Data de Fim</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal border-white/20 text-white hover:bg-white/10",
+                      !customEndDate && "text-white/60"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {customEndDate ? format(customEndDate, "dd/MM/yyyy") : <span>Selecionar</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={customEndDate}
+                    onSelect={setCustomEndDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <Button
+              onClick={() => {
+                if (customStartDate && customEndDate) {
+                  setDateRange('custom');
+                }
+              }}
+              disabled={!customStartDate || !customEndDate}
+              className="bg-teal-600 hover:bg-teal-700 text-white"
+            >
+              Aplicar Período
             </Button>
           </div>
         </CardContent>
@@ -420,15 +548,17 @@ const ReportsPanel = () => {
         <CardHeader>
           <CardTitle className="text-white">Evolução dos Gastos</CardTitle>
           <CardDescription className="text-white/60">
-            {dateRange === 'month' ? 'Gastos diários do mês' : 'Gastos mensais do ano'}
+            {dateRange === 'week' ? 'Gastos diários da semana' :
+             dateRange === 'month' ? 'Gastos diários do mês' : 
+             dateRange === 'year' ? 'Gastos mensais do ano' : 'Gastos do período selecionado'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dateRange === 'month' ? dailyData : monthlyData}>
+            <LineChart data={dateRange === 'year' ? monthlyData : dailyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis 
-                dataKey={dateRange === 'month' ? 'day' : 'month'}
+                dataKey={dateRange === 'year' ? 'month' : 'day'}
                 stroke="rgba(255,255,255,0.6)"
                 fontSize={12}
               />

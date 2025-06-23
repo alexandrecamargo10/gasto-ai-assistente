@@ -1,11 +1,21 @@
 
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Smartphone, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
   const handleStartFreeTrial = () => {
-    // Placeholder para futura integração com Supabase auth
-    console.log("Iniciando teste grátis...");
+    navigate('/auth');
+  };
+
+  const handleViewDemo = () => {
+    // Scroll para a seção de features
+    const featuresSection = document.getElementById('features');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   return (
@@ -48,10 +58,11 @@ const Hero = () => {
               className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
             >
               <Smartphone className="w-5 h-5 mr-2" />
-              Teste Grátis por 7 Dias
+              Começar Grátis Agora
             </Button>
             
             <Button 
+              onClick={handleViewDemo}
               variant="outline" 
               size="lg"
               className="border-2 border-teal-400 text-teal-400 hover:bg-teal-400 hover:text-navy-900 px-8 py-4 text-lg font-semibold transition-all duration-300"
@@ -62,7 +73,7 @@ const Hero = () => {
           </div>
 
           {/* Features Preview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 animate-fade-in">
+          <div id="features" className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 animate-fade-in">
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300">
               <MessageCircle className="w-12 h-12 text-teal-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Via WhatsApp</h3>

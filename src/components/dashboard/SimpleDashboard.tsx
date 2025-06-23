@@ -45,19 +45,12 @@ const SimpleDashboard = () => {
     }
   };
 
-  const handleUpgrade = async (plan: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { plan }
-      });
+  const handleUpgradeStandard = () => {
+    window.open('https://buy.stripe.com/test_bJedR93DC8xicDV8Ylao800', '_blank');
+  };
 
-      if (error) throw error;
-
-      // Abrir checkout em nova aba
-      window.open(data.url, '_blank');
-    } catch (error) {
-      console.error('Erro ao criar checkout:', error);
-    }
+  const handleUpgradeTop = () => {
+    window.open('https://buy.stripe.com/test_00w00j3DC5l69rJdeBao801', '_blank');
   };
 
   const handleManageSubscription = async () => {
@@ -122,7 +115,7 @@ const SimpleDashboard = () => {
               <p className="text-sm text-white/60">Plano Atual</p>
               <Badge className={getPlanColor(profile?.plan || 'FREE')}>
                 {getPlanIcon(profile?.plan || 'FREE')}
-                <span className="ml-1">{profile?.plan}</span>
+                <span className="ml-1">{profile?.plan || 'FREE'}</span>
               </Badge>
             </div>
             {profile?.subscription_end_date && (
@@ -143,13 +136,13 @@ const SimpleDashboard = () => {
       {/* Planos Disponíveis */}
       <Card className="bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader>
-          <CardTitle className="text-white">Planos Disponíveis</CardTitle>
+          <CardTitle className="text-white">Upgrade do Plano</CardTitle>
           <CardDescription className="text-white/60">
             Faça upgrade para desbloquear mais funcionalidades
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {profile?.plan !== 'STANDARD' && (
+          {profile?.plan !== 'STANDARD' && profile?.plan !== 'TOP' && (
             <div className="border border-white/20 rounded-lg p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -172,7 +165,7 @@ const SimpleDashboard = () => {
                 <li>• Suporte prioritário</li>
               </ul>
               <Button 
-                onClick={() => handleUpgrade('STANDARD')}
+                onClick={handleUpgradeStandard}
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 <CreditCard className="h-4 w-4 mr-2" />
@@ -211,7 +204,7 @@ const SimpleDashboard = () => {
                 <li>• Export em múltiplos formatos</li>
               </ul>
               <Button 
-                onClick={() => handleUpgrade('TOP')}
+                onClick={handleUpgradeTop}
                 className="w-full bg-purple-600 hover:bg-purple-700"
               >
                 <Crown className="h-4 w-4 mr-2" />
