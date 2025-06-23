@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,12 +45,34 @@ const SimpleDashboard = () => {
     }
   };
 
-  const handleUpgradeStandard = () => {
-    window.open('https://buy.stripe.com/test_bJedR93DC8xicDV8Ylao800', '_blank');
+  const handleUpgradeStandard = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan: 'STANDARD' }
+      });
+
+      if (error) throw error;
+
+      // Abrir checkout em nova aba
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Erro ao criar checkout:', error);
+    }
   };
 
-  const handleUpgradeTop = () => {
-    window.open('https://buy.stripe.com/test_00w00j3DC5l69rJdeBao801', '_blank');
+  const handleUpgradeTop = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan: 'TOP' }
+      });
+
+      if (error) throw error;
+
+      // Abrir checkout em nova aba
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Erro ao criar checkout:', error);
+    }
   };
 
   const handleManageSubscription = async () => {

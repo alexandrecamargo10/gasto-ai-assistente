@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Gift, Smartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -31,7 +32,7 @@ const Pricing = () => {
       features: [
         "Lançamentos ilimitados",
         "Todos os tipos de relatórios",
-        "Histórico de 1 ano",
+        "Histórico de até 1 ano",
         "Alertas personalizados",
         "Export para PDF",
         "Suporte prioritário"
@@ -53,7 +54,8 @@ const Pricing = () => {
         "Histórico ilimitado",
         "Gestão de categorias personalizadas",
         "Múltiplos formatos de export",
-        "Análises preditivas"
+        "Análises preditivas",
+        "7 dias grátis para testar"
       ],
       cta: "Teste Grátis 7 Dias",
       popular: true,
@@ -150,7 +152,8 @@ const Pricing = () => {
                     : 'bg-teal-500 hover:bg-teal-600 text-white'
                 }`}
               >
-                {plan.name === 'TOP' && <Smartphone className="w-5 h-5 mr-2" />}
+                {plan.name === 'TOP' && <Crown className="w-5 h-5 mr-2" />}
+                {plan.name === 'STANDARD' && <Smartphone className="w-5 h-5 mr-2" />}
                 {plan.cta}
               </Button>
 

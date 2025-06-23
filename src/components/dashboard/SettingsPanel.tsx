@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { Crown, Smartphone, CreditCard } from 'lucide-react';
 
 const SettingsPanel = () => {
   const { user } = useAuth();
@@ -23,7 +25,8 @@ const SettingsPanel = () => {
   const [profile, setProfile] = useState({
     name: '',
     phone: '',
-    whatsapp_number: ''
+    whatsapp_number: '',
+    plan: 'FREE'
   });
 
   useEffect(() => {
@@ -67,7 +70,8 @@ const SettingsPanel = () => {
       setProfile({
         name: data.name || '',
         phone: data.phone || '',
-        whatsapp_number: data.whatsapp_number || ''
+        whatsapp_number: data.whatsapp_number || '',
+        plan: data.plan || 'FREE'
       });
     } catch (error) {
       console.error('Erro ao buscar perfil:', error);
@@ -111,7 +115,11 @@ const SettingsPanel = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update(profile)
+        .update({
+          name: profile.name,
+          phone: profile.phone,
+          whatsapp_number: profile.whatsapp_number
+        })
         .eq('id', user?.id);
 
       if (error) throw error;
@@ -129,6 +137,73 @@ const SettingsPanel = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpgradeStandard = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan: 'STANDARD' }
+      });
+
+      if (error) throw error;
+
+      // Abrir checkout em nova aba
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Erro ao criar checkout:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível iniciar o processo de pagamento",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpgradeTop = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan: 'TOP' }
+      });
+
+      if (error) throw error;
+
+      // Abrir checkout em nova aba
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Erro ao criar checkout:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível iniciar o processo de pagamento",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+
+      if (error) throw error;
+
+      // Abrir portal em nova aba
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Erro ao abrir portal:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível abrir o portal de gerenciamento",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getPlanColor = (plan: string) => {
+    switch (plan) {
+      case 'FREE': return 'bg-gray-500';
+      case 'STANDARD': return 'bg-blue-500';
+      case 'TOP': return 'bg-purple-500';
+      default: return 'bg-gray-500';
     }
   };
 
@@ -175,6 +250,15 @@ const SettingsPanel = () => {
               onChange={(e) => setProfile({...profile, whatsapp_number: e.target.value})}
               placeholder="5511999999999"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-white">Plano Atual</Label>
+            <Badge className={getPlanColor(profile.plan)}>
+              {profile.plan === 'TOP' && <Crown className="h-4 w-4 mr-1" />}
+              {profile.plan === 'STANDARD' && <Smartphone className="h-4 w-4 mr-1" />}
+              {profile.plan}
+            </Badge>
           </div>
 
           <Button onClick={handleSaveProfile} disabled={saving} className="bg-teal-600 hover:bg-teal-700">
@@ -227,26 +311,110 @@ const SettingsPanel = () => {
         </CardContent>
       </Card>
 
-      {/* Campo para Cupom */}
-      <Card className="bg-white/10 backdrop-blur-md border-white/20">
-        <CardHeader>
-          <CardTitle className="text-white">Cupom de Desconto</CardTitle>
-          <CardDescription className="text-white/60">
-            Insira um cupom promocional para desbloquear benefícios
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex space-x-2">
-            <Input
-              placeholder="Digite o código do cupom"
-              className="flex-1"
-            />
-            <Button className="bg-teal-600 hover:bg-teal-700">
-              Aplicar Cupom
+      {/* Upgrade do Plano */}
+      {(profile.plan === 'FREE' || profile.plan === 'STANDARD') && (
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white">Upgrade do Plano</CardTitle>
+            <CardDescription className="text-white/60">
+              Faça upgrade para desbloquear mais funcionalidades
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {profile.plan === 'FREE' && (
+              <div className="border border-white/20 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
+                      <Smartphone className="h-5 w-5 text-blue-400" />
+                      <span>STANDARD</span>
+                    </h3>
+                    <p className="text-white/60">Para uso pessoal completo</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-white">R$ 9,90</p>
+                    <p className="text-white/60">/mês</p>
+                  </div>
+                </div>
+                <ul className="text-sm text-white/80 space-y-1">
+                  <li>• Transações ilimitadas via WhatsApp</li>
+                  <li>• Relatórios avançados (até 1 ano)</li>
+                  <li>• Categorias personalizadas</li>
+                  <li>• Alertas de orçamento</li>
+                  <li>• Suporte prioritário</li>
+                </ul>
+                <Button 
+                  onClick={handleUpgradeStandard}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Upgrade para Standard
+                </Button>
+              </div>
+            )}
+
+            <div className="border-2 border-purple-500 rounded-lg p-4 space-y-3 relative">
+              <div className="absolute -top-3 left-4">
+                <Badge className="bg-purple-500">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Mais Popular
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-white flex items-center space-x-2">
+                    <Crown className="h-5 w-5 text-purple-400" />
+                    <span>TOP</span>
+                  </h3>
+                  <p className="text-white/60">Experiência completa + Dashboard</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-white">R$ 19,90</p>
+                  <p className="text-white/60">/mês</p>
+                </div>
+              </div>
+              <ul className="text-sm text-white/80 space-y-1">
+                <li>• Tudo do Standard +</li>
+                <li>• Dashboard web completa</li>
+                <li>• Gráficos e insights avançados</li>
+                <li>• Análises preditivas</li>
+                <li>• Gestão avançada de categorias</li>
+                <li>• Export em múltiplos formatos</li>
+                <li>• 7 dias grátis para testar</li>
+              </ul>
+              <Button 
+                onClick={handleUpgradeTop}
+                className="w-full bg-purple-600 hover:bg-purple-700"
+              >
+                <Crown className="h-4 w-4 mr-2" />
+                Teste Grátis 7 Dias (TOP)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Gerenciar Assinatura para usuários pagos */}
+      {(profile.plan === 'STANDARD' || profile.plan === 'TOP') && (
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader>
+            <CardTitle className="text-white">Gerenciar Assinatura</CardTitle>
+            <CardDescription className="text-white/60">
+              Altere seu plano, método de pagamento ou cancele sua assinatura
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              onClick={handleManageSubscription}
+              variant="outline"
+              className="w-full border-white/20 text-white hover:bg-white/10"
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Gerenciar no Stripe
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

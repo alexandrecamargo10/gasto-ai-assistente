@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Crown, Star, CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Signup = () => {
   const [signupEmail, setSignupEmail] = useState('');
@@ -19,6 +21,7 @@ const Signup = () => {
   const paymentSuccess = searchParams.get('payment') === 'success';
   
   const { signUp, user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,21 +30,77 @@ const Signup = () => {
     }
   }, [user, navigate]);
 
-  // Redirecionar para login se não há pagamento confirmado e não é plano FREE
+  // Mostrar mensagem se chegou aqui sem pagamento para planos pagos
   useEffect(() => {
     if (!paymentSuccess && selectedPlan && selectedPlan !== 'FREE') {
-      navigate('/auth');
+      toast({
+        title: "Pagamento necessário",
+        description: "Você precisa efetuar o pagamento antes de se cadastrar para planos pagos.",
+        variant: "destructive"
+      });
+      navigate('/');
     }
-  }, [paymentSuccess, selectedPlan, navigate]);
+  }, [paymentSuccess, selectedPlan, navigate, toast]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
-    if (!error) {
+    
+    try {
+      const { error } = await signUp(signupEmail, signupPassword, signupName);
+      if (error) {
+        toast({
+          title: "Erro no cadastro",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Se tem plano selecionado e pagamento confirmado, atualizar o plano
+      if (selectedPlan && paymentSuccess && ['STANDARD', 'TOP'].includes(selectedPlan)) {
+        // Aguardar um pouco para o usuário ser criado
+        setTimeout(async () => {
+          try {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ 
+                plan: selectedPlan,
+                subscription_status: 'active',
+                ...(selectedPlan === 'TOP' && { trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() })
+              })
+              .eq('email', signupEmail);
+
+            if (updateError) {
+              console.error('Erro ao atualizar plano:', updateError);
+            } else {
+              toast({
+                title: "Cadastro realizado!",
+                description: `Sua conta foi criada com o plano ${selectedPlan}. Verifique seu email para confirmar.`
+              });
+            }
+          } catch (error) {
+            console.error('Erro ao atualizar plano:', error);
+          }
+        }, 2000);
+      } else {
+        toast({
+          title: "Cadastro realizado!",
+          description: "Verifique seu email para confirmar a conta."
+        });
+      }
+
       navigate('/dashboard');
+    } catch (error) {
+      console.error('Erro no cadastro:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro no cadastro. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const getPlanIcon = (plan: string) => {

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DashboardOverview from '@/components/dashboard/DashboardOverview';
 import ExpenseManagement from '@/components/dashboard/ExpenseManagement';
 import CategoryManagement from '@/components/dashboard/CategoryManagement';
@@ -13,7 +14,7 @@ import SettingsPanel from '@/components/dashboard/SettingsPanel';
 import ReportsPanel from '@/components/dashboard/ReportsPanel';
 import CategoryLimits from '@/components/dashboard/CategoryLimits';
 import SimpleDashboard from '@/components/dashboard/SimpleDashboard';
-import { LogOut, User, Settings, BarChart3, PlusCircle, Tags, DollarSign, Crown } from 'lucide-react';
+import { LogOut, User, Settings, BarChart3, PlusCircle, Tags, DollarSign, Crown, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
@@ -92,8 +93,8 @@ const Dashboard = () => {
     );
   }
 
-  // Se não for plano TOP, mostrar dashboard simplificada
-  if (profile?.plan !== 'TOP') {
+  // Dashboard simples para planos FREE e STANDARD
+  if (profile?.plan === 'FREE' || profile?.plan === 'STANDARD') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-charcoal-800">
         {/* Header */}
@@ -105,11 +106,6 @@ const Dashboard = () => {
                 <Badge className={getPlanBadgeColor(profile?.plan)}>
                   {profile?.plan}
                 </Badge>
-                {isTrialActive && (
-                  <Badge variant="outline" className="text-teal-300 border-teal-300">
-                    Trial: {trialDaysLeft} dias restantes
-                  </Badge>
-                )}
               </div>
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-white/80">
@@ -126,7 +122,80 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <SimpleDashboard />
+          <TooltipProvider>
+            <Tabs defaultValue="settings" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-6 bg-white/10 backdrop-blur-md">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger value="overview" disabled className="flex items-center space-x-2 text-white/50 cursor-not-allowed">
+                      <Lock className="h-4 w-4" />
+                      <span>Visão Geral</span>
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Disponível apenas no Plano TOP</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger value="expenses" disabled className="flex items-center space-x-2 text-white/50 cursor-not-allowed">
+                      <Lock className="h-4 w-4" />
+                      <span>Gastos</span>
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Disponível apenas no Plano TOP</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger value="categories" disabled className="flex items-center space-x-2 text-white/50 cursor-not-allowed">
+                      <Lock className="h-4 w-4" />
+                      <span>Categorias</span>
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Disponível apenas no Plano TOP</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger value="limits" disabled className="flex items-center space-x-2 text-white/50 cursor-not-allowed">
+                      <Lock className="h-4 w-4" />
+                      <span>Limites</span>
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Disponível apenas no Plano TOP</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger value="reports" disabled className="flex items-center space-x-2 text-white/50 cursor-not-allowed">
+                      <Lock className="h-4 w-4" />
+                      <span>Relatórios</span>
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Disponível apenas no Plano TOP</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <TabsTrigger value="settings" className="flex items-center space-x-2 text-white data-[state=active]:bg-white/20">
+                  <Settings className="h-4 w-4" />
+                  <span>Configurações</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="settings" className="space-y-6">
+                <SettingsPanel />
+              </TabsContent>
+            </Tabs>
+          </TooltipProvider>
         </main>
       </div>
     );
